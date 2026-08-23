@@ -45,4 +45,15 @@ export class UsersService {
       .limit(1);
     return row ?? null;
   }
+
+  async findById(
+    id: string,
+  ): Promise<{ id: string; email: string; role: Role; createdAt: Date } | null> {
+    const [row] = await this.db
+      .select({ id: users.id, email: users.email, role: users.role, createdAt: users.createdAt })
+      .from(users)
+      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .limit(1);
+    return row ? { ...row, role: row.role as Role } : null;
+  }
 }
