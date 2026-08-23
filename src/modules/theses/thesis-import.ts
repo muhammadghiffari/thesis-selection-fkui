@@ -27,6 +27,11 @@ function str(row: RawRow, ...keys: string[]): string {
   return '';
 }
 
+/** Counts error-free rows (mirrors students countValid). */
+export function countValidTheses(rows: ValidatedThesisRow[]): number {
+  return rows.filter((r) => Object.keys(r.errors).length === 0).length;
+}
+
 /** Pure validator for thesis catalog imports. Titles are admin-only data. */
 export function validateThesisRows(rows: RawRow[]): ValidatedThesisRow[] {
   const seenTitles = new Set<string>();
