@@ -202,6 +202,17 @@ export const supportTickets = pgTable('support_tickets', {
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
 });
 
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const notificationDeliveries = pgTable('notification_deliveries', {
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id),

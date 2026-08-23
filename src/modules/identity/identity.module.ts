@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
+import { LoginRateLimiter } from './login-rate-limiter.js';
+import { RefreshTokensService } from './refresh-tokens.service.js';
 import { StudentEmailService } from './student-email.service.js';
 import { UsersService } from './users.service.js';
 
@@ -16,7 +18,7 @@ import { UsersService } from './users.service.js';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('app.jwtSecret'),
-        signOptions: { expiresIn: '12h' },
+        signOptions: { expiresIn: '15m' },
       }),
     }),
   ],
@@ -25,6 +27,8 @@ import { UsersService } from './users.service.js';
     UsersService,
     AuthService,
     StudentEmailService,
+    RefreshTokensService,
+    LoginRateLimiter,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

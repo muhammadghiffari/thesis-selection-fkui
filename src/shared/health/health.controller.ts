@@ -22,8 +22,10 @@ function down(key: string): HealthIndicatorResult {
 
 @Controller('health')
 export class HealthController {
+  // NOTE: explicit @Inject keeps DI working under esbuild-based runners
+  // (vitest) where decorator metadata is not emitted.
   constructor(
-    private readonly health: HealthCheckService,
+    @Inject(HealthCheckService) private readonly health: HealthCheckService,
     @Inject(DATABASE) private readonly db: Database,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
