@@ -70,8 +70,27 @@ function insertSelection(db: Database, cols: {
   `);
 }
 
+/**
+ * Drizzle wraps driver errors in DrizzleQueryError; the real Postgres
+ * fields (code, message, constraint) live on the cause chain.
+ */
+interface PgErr {
+  code?: string;
+  message?: string;
+  constraint?: string;
+  cause?: unknown;
+}
+
+function pgError(err: unknown): PgErr {
+  let cur: PgErr | undefined = err as PgErr;
+  while (cur && cur.code === undefined && cur.cause !== undefined) {
+    cur = cur.cause as PgErr;
+  }
+  return cur ?? {};
+}
+
 function constraintOf(err: unknown): string | undefined {
-  return (err as { constraint?: string }).constraint;
+  return pgError(err).constraint;
 }
 
 // ---------- tests ----------
@@ -83,10 +102,13 @@ describe('DB constraints — student email domain trigger', () => {
   });
 
   it('rejects non-@ui.ac.id students at DB level', async () => {
-    await expect(seedStudent(pg.db, `bad-${crypto.randomUUID()}@gmail.com`)).rejects.toMatchObject({
-      code: '23514',
-      message: expect.stringContaining('Student email must end with @ui.ac.id'),
-    });
+    const err: unknown = await seedStudent(pg.db, `bad-${crypto.randomUUID()}@gmail.com`).then(
+      () => null,
+      (e) => e,
+    );
+    const pgErr = pgError(err);
+    expect(pgErr.code).toBe('23514');
+    expect(pgErr.message).toContain('Student email must end with @ui.ac.id');
   });
 
   it('allows non-student roles on any domain', async () => {
@@ -153,9 +175,16 @@ describe('DB constraints — partial unique index smoke test (F1 DoD)', () => {
     }
 
     // exactly-3 rule backstop: priority outside 1..3 violates CHECK
-    await expect(
-      insertSelection(pg.db, { periodId, studentId: s.studentId, thesisId: thesisIds[3]!, priority: 4 }),
-    ).rejects.toMatchObject({ code: '23514' });
+    const err: unknown = await insertSelection(pg.db, {
+      periodId,
+      studentId: s.studentId,
+      thesisId: thesisIds[3]!,
+      priority: 4,
+    }).then(
+      () => null,
+      (e) => e,
+    );
+    expect(pgError(err).code).toBe('23514');
   });
 
   it('soft-deleted selections do not block re-claiming', async () => {
