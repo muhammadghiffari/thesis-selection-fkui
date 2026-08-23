@@ -240,7 +240,7 @@ END;
 $$ LANGUAGE plpgsql;
 --> statement-breakpoint
 
-SELECT ensure_activity_log_partition(m)
+SELECT ensure_activity_log_partition(m::date)
 FROM generate_series(
   date_trunc('month', now())::date,
   (date_trunc('month', now()) + INTERVAL '5 months')::date,

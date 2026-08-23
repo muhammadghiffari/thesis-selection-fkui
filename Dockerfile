@@ -9,6 +9,7 @@ RUN npm ci
 COPY tsconfig*.json ./
 COPY src src
 COPY workers workers
+COPY drizzle drizzle
 RUN npm run build:server && npm prune --omit=dev
 
 # ---------- runtime (server + workers share one image) ----------
