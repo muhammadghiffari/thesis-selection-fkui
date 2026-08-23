@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "sourceMap": true,
+    "noEmit": false
+  },
+  "include": ["src/**/*.ts", "workers/src/**/*.ts"],
+  "exclude": ["**/*.test.ts", "test/**"]
+}

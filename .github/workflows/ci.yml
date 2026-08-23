@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  static-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck (strict)
+        run: |
+          npx tsc -p tsconfig.api.json --noEmit
+          npx tsc -p tsconfig.workers.json --noEmit
+          npx tsc -p web/tsconfig.json --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Build server + web
+        run: |
+          npm run build:server
+          npm run build --workspace web
+
+  integration-testcontainers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Testcontainers talks to the runner's Docker daemon (preinstalled on ubuntu-latest)
+      - name: Integration tests (Testcontainers postgres16+pgvector, redis7)
+        run: npm run test:integration
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build & start full stack
+        run: docker compose up -d --wait --wait-timeout 180
+      - name: Smoke test health endpoint
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health | grep -q '"status":"ok"'; then
+              echo "health OK"; exit 0
+            fi
+            sleep 2
+          done
+          echo "health never became OK"; docker compose logs api; exit 1
+      - name: Smoke test RBAC login + guarded endpoint
+        env:
+          ADMIN_EMAIL: admin@fkui.ac.id
+          ADMIN_PASS: supersecret1
+        run: |
+          TOKEN=$(docker compose exec -T api node dist/src/scripts/seed-admin.js $ADMIN_EMAIL $ADMIN_PASS >/dev/null && \
+            curl -fsS -X POST http://localhost:3000/api/auth/login \
+              -H 'Content-Type: application/json' \
+              -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASS\"}" | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+          curl -fsS http://localhost:3000/api/auth/me -H "Authorization: Bearer $TOKEN" | grep -q '"role":"admin"'
+          echo "RBAC smoke OK"
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
