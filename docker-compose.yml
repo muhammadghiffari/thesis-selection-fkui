@@ -42,6 +42,12 @@ services:
       NODE_ENV: production
     ports:
       - '3000:3000'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   worker:
     build: .
@@ -56,6 +62,12 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
       NODE_ENV: production
+    healthcheck:
+      test: ['CMD', 'pgrep', '-f', 'dist/workers']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
 volumes:
   pgdata:
