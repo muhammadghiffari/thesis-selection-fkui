@@ -84,3 +84,16 @@ grace countdown [CLAIM NOW!]
 - Type-check & lint pass (strict mode)
 - Audit log entry recorded for every mutation
 - UI is mobile-first; card status updates live without refresh
+
+## Delivery Status (update after each merged PR)
+- F1 scaffold: DONE (CI green: lint, unit, integration, compose-smoke)
+- F2-auth: DONE — JWT access+refresh rotation, requireAuth/requireRole guards,
+  roles student/lecturer/admin, admin provisions staff accounts
+- NEXT: F2 master data (bulk import/export, period CRUD, bulk actions)
+
+## Implementation Notes (gotchas discovered)
+- Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
+  see authService/guards for the pattern.
+- Worker container is NOT an HTTP server — its healthcheck is a pgrep process
+  check, not curl. Never reintroduce an HTTP healthcheck for worker.
+- Baseline test suite: all green on main. Do not regress.
