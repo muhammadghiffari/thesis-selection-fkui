@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthUser, UserProfile } from './auth-user.js';
 import { AuthService, type TokenPair } from './auth.service.js';
@@ -19,7 +19,7 @@ function requireUser(req: Request): AuthUser {
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   @Public()
   @Post('register')

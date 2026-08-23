@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { AuthUser, UserProfile } from './auth-user.js';
@@ -29,12 +29,14 @@ function pgCode(err: unknown): string | undefined {
 
 @Injectable()
 export class AuthService {
+  // explicit @Inject on every param: esbuild (vitest) emits no decorator
+  // metadata, so type-based resolution silently yields undefined deps.
   constructor(
-    private readonly users: UsersService,
-    private readonly jwt: JwtService,
-    private readonly studentEmails: StudentEmailService,
-    private readonly refreshTokens: RefreshTokensService,
-    private readonly rateLimiter: LoginRateLimiter,
+    @Inject(UsersService) private readonly users: UsersService,
+    @Inject(JwtService) private readonly jwt: JwtService,
+    @Inject(StudentEmailService) private readonly studentEmails: StudentEmailService,
+    @Inject(RefreshTokensService) private readonly refreshTokens: RefreshTokensService,
+    @Inject(LoginRateLimiter) private readonly rateLimiter: LoginRateLimiter,
   ) {}
 
   /** Email+password login for admin/lecturer; students use magic links (F3). */
