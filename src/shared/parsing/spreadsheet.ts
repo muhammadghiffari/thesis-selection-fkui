@@ -32,7 +32,7 @@ export async function parseSpreadsheet(buffer: Buffer, ext: AllowedExtension): P
   }
 
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
   const sheet = workbook.worksheets[0];
   if (!sheet) throw new BadRequestException('Workbook has no sheets');
 

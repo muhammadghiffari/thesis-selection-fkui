@@ -41,6 +41,27 @@ export const lecturers = pgTable('lecturers', {
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
 });
 
+/** Canonical per-period timing/capacity configuration (AGENTS.md rule 4/5). */
+export interface PeriodSettings {
+  lock_duration_sec: number;
+  undo_window_sec: number;
+  grace_period_sec: number;
+  required_selections: number;
+  attempts_default: number;
+  watch_max: number;
+  mode: 'first_come' | 'lottery';
+}
+
+export const DEFAULT_PERIOD_SETTINGS: PeriodSettings = {
+  lock_duration_sec: 30,
+  undo_window_sec: 15,
+  grace_period_sec: 60,
+  required_selections: 3,
+  attempts_default: 4,
+  watch_max: 10,
+  mode: 'first_come',
+};
+
 export const selectionPeriods = pgTable('selection_periods', {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
@@ -50,7 +71,8 @@ export const selectionPeriods = pgTable('selection_periods', {
   closesAt: timestamp('closes_at', { withTimezone: true }),
   settings: jsonb()
     .notNull()
-    .default(sql`'{"lock_duration_sec":30,"undo_window_sec":15,"grace_period_sec":60,"required_selections":3,"attempts_default":4,"watch_max":10,"mode":"first_come"}'::jsonb`),
+    .$type<PeriodSettings>()
+    .default(sql`${JSON.stringify(DEFAULT_PERIOD_SETTINGS)}::jsonb`),
   clonedFrom: uuid('cloned_from'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
