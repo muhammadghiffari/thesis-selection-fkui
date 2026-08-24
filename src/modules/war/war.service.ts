@@ -215,13 +215,19 @@ export class WarService {
       if (!row) throw new Error('insert returned no row');
 
       // stored deadline (not a re-computed one) keeps idempotent replays identical
+      const lockedUntilIso = (row.lockedUntil ?? lockedUntil).toISOString();
+      this.events.emit('war.lock', {
+        periodId: input.periodId,
+        thesisId: input.thesisId,
+        lockedUntil: lockedUntilIso,
+      });
       return {
         status: 'locked',
         selection: {
           id: row.id,
           thesisId: input.thesisId,
           priority,
-          lockedUntil: (row.lockedUntil ?? lockedUntil).toISOString(),
+          lockedUntil: lockedUntilIso,
         },
       };
     } catch (err) {
@@ -258,6 +264,11 @@ export class WarService {
     // title exclusion now enforced by the DB partial index (status=confirmed is active)
     await this.redis.del(`lock:${sel.periodId}:${sel.thesisId}`).catch(() => undefined);
 
+    this.events.emit('war.taken', {
+      periodId: sel.periodId,
+      thesisId: sel.thesisId,
+      referenceNumber: refNumber,
+    });
     this.events.emit('selection.confirmed', {
       userId: user.sub,
       periodId: sel.periodId,
@@ -282,6 +293,7 @@ export class WarService {
       .set({ status: 'expired' })
       .where(and(eq(thesisSelections.id, selectionId), eq(thesisSelections.status, 'locked')));
     await this.redis.del(`lock:${sel.periodId}:${sel.thesisId}`).catch(() => undefined);
+    this.events.emit('war.available', { periodId: sel.periodId, thesisId: sel.thesisId });
     return { released: true };
   }
 
@@ -320,6 +332,7 @@ export class WarService {
       .update(thesisSelections)
       .set({ status: 'expired' })
       .where(and(eq(thesisSelections.id, selectionId), eq(thesisSelections.status, 'confirmed')));
+    this.events.emit('war.available', { periodId: sel.periodId, thesisId: sel.thesisId });
     await this.audit.log({ id: user.sub, role: user.role }, 'selection.undo', 'thesis_selection', selectionId, {
       periodId: sel.periodId,
     });
@@ -462,6 +475,7 @@ export class WarService {
         .set({ status: 'expired' })
         .where(and(eq(thesisSelections.id, l.id), eq(thesisSelections.status, 'locked')));
       await this.redis.del(`lock:${periodId}:${l.thesisId}`).catch(() => undefined);
+      this.events.emit('war.available', { periodId, thesisId: l.thesisId });
     }
   }
 
