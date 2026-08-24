@@ -8,6 +8,9 @@ import { RedisModule } from './shared/redis/redis.module.js';
 import { loggingModule } from './shared/logging/logger.module.js';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter.js';
 import { HealthModule } from './shared/health/health.module.js';
+import { EventBusModule } from './shared/event-bus/event-bus.module.js';
+import { NotificationsInfraModule } from './shared/notifications/notifications-infra.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
@@ -18,6 +21,8 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     AppConfigModule,
     loggingModule(appConfig()),
     AuditModule,
+    EventBusModule,
+    NotificationsInfraModule,
     DbModule,
     RedisModule,
     HealthModule,
@@ -25,6 +30,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     StudentsModule,
     ThesesModule,
     PeriodsModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
