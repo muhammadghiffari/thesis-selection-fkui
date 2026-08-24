@@ -106,7 +106,11 @@ grace countdown [CLAIM NOW!]
   reorder, idempotency keys, THS-{year}-{seq} receipts, auto-war heartbeat-gated
   WarRunner. CRITICAL FIX: unplugin-swc decoratorMetadata added to vitest —
   DTO validation now actually runs in tests.
-- NEXT: F6 realtime layer
+- F6 realtime: DONE — EventBus -> Redis pub/sub -> Socket.IO fan-out per instance,
+  rooms lobby:{periodId}/admin/lecturer:{id}/thesis:{id}, JWT handshake guard,
+  reconnect = REST snapshot reconciliation (churn test 0 mismatches), admin
+  broadcast banner (audited), measured latency 27-36ms.
+- NEXT: F7 swap engine
 
 
 ## Implementation Notes (gotchas discovered)
