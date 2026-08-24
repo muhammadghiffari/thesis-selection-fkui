@@ -41,19 +41,24 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   afterInit(): void {
     this.realtime.attachServer(this.server);
+    // handshake-level rejection — invalid JWTs never establish a session
+    this.server.use((socket, next) => {
+      const auth = socket.handshake.auth as HandshakeAuth;
+      this.jwt
+        .verifyAsync<AuthUser>(String(auth.token ?? ''))
+        .then((payload) => {
+          socket.data.user = payload;
+          next();
+        })
+        .catch(() => next(new Error('unauthorized')));
+    });
   }
 
   async handleConnection(client: Socket): Promise<void> {
-    const auth = client.handshake.auth as HandshakeAuth;
-    try {
-      const payload = await this.jwt.verifyAsync<AuthUser>(String(auth.token ?? ''));
-      this.userBySocket.set(client.id, payload);
-      if (payload.role === 'admin') await client.join('admin');
-    } catch {
-      this.logger.warn(`rejected unauthenticated socket ${client.id}`);
-      client.emit('unauthorized', { message: 'valid token required' });
-      client.disconnect(true);
-    }
+    const user = client.data.user as AuthUser | undefined;
+    if (!user) return;
+    this.userBySocket.set(client.id, user);
+    if (user.role === 'admin') await client.join('admin');
   }
 
   handleDisconnect(client: Socket): void {
