@@ -3,6 +3,7 @@ import { RequireAdmin, LogoutButton, LoginPage } from './auth';
 import { StudentsPage } from './pages/StudentsPage';
 import { PeriodsPage } from './pages/PeriodsPage';
 import { ThesesPage } from './pages/ThesesPage';
+import { DeliveriesPage } from './pages/DeliveriesPage';
 
 function Shell() {
   const location = useLocation();
@@ -10,6 +11,7 @@ function Shell() {
     { to: '/students', label: 'Students' },
     { to: '/theses', label: 'Theses' },
     { to: '/periods', label: 'Periods' },
+    { to: '/deliveries', label: 'Deliveries' },
   ];
   return (
     <div className="min-h-screen bg-slate-50">
@@ -31,6 +33,7 @@ function Shell() {
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/theses" element={<ThesesPage />} />
           <Route path="/periods" element={<PeriodsPage />} />
+          <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="*" element={<Navigate to="/students" replace />} />
         </Routes>
       </main>
