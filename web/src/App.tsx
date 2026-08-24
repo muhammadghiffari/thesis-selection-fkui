@@ -9,6 +9,7 @@ import { DeliveriesPage } from './pages/DeliveriesPage';
 import { LobbyPage, MagicEntryPage } from './pages/StudentPages';
 import { RulesPage } from './pages/RulesPage';
 import { ReceiptPage, WarRoomPage } from './pages/WarPages';
+import { MySwapsPage, SwapReviewPage } from './pages/SwapPages';
 
 function BannerToast() {
   const [banner, setBanner] = useState<{ message: string; at: string } | null>(null);
@@ -32,6 +33,7 @@ function Shell() {
     { to: '/theses', label: 'Theses' },
     { to: '/periods', label: 'Periods' },
     { to: '/deliveries', label: 'Deliveries' },
+    { to: '/swaps-review', label: 'Swap review' },
   ];
   return (
     <div className="min-h-screen bg-slate-50">
@@ -55,6 +57,8 @@ function Shell() {
           <Route path="/theses" element={<ThesesPage />} />
           <Route path="/periods" element={<PeriodsPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
+          <Route path="/swaps-review" element={<SwapReviewPage />} />
+          <Route path="/my-swaps" element={<MySwapsPage />} />
           <Route path="*" element={<Navigate to="/students" replace />} />
         </Routes>
       </main>
