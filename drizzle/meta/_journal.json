@@ -28,7 +28,7 @@
       "version": "7",
       "when": 1756200000000,
       "tag": "0003_pre_war_lobby",
-      "breakpoints: true
+      "breakpoints": true
     },
     {
       "idx": 4,
