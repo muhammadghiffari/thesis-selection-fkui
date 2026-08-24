@@ -195,8 +195,25 @@ export class StageRunner {
         );
     }
 
-    // email/nudge stages consider all enrolled actives; the atomic stage-slot
-    // claim above provides exactly-once per run.
-    return base().where(and(eq(periodEnrollments.periodId, periodId), isNull(users.deletedAt)));
+    // H-7 / H-1 / H-1h: only students who have NOT yet opened or claimed
+    if (stage === 'initial_h7' || stage === 'reminder_h1' || stage === 'reminder_h1h') {
+      return base().where(
+        and(
+          eq(periodEnrollments.periodId, periodId),
+          isNull(users.deletedAt),
+          isNull(periodEnrollments.linkOpenedAt),
+          isNull(periodEnrollments.linkClaimedAt),
+        ),
+      );
+    }
+
+    // T-10 in-app nudge: everyone without a session yet (even link-openers)
+    return base().where(
+      and(
+        eq(periodEnrollments.periodId, periodId),
+        isNull(users.deletedAt),
+        isNull(periodEnrollments.linkClaimedAt),
+      ),
+    );
   }
 }

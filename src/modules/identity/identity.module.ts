@@ -31,17 +31,16 @@ import { UsersService } from './users.service.js';
     RefreshTokensService,
     LoginRateLimiter,
     {
-      // composition-root adapter: other modules consume the port, not identity
+      // port adapter — consumers depend on the shared interface, not this class
       provide: SESSION_ISSUER,
       inject: [RefreshTokensService],
       useFactory: (sessions: RefreshTokensService) => ({
-        issueSession: (userId: string, role: 'admin' | 'lecturer' | 'student') =>
-          sessions.issueSession(userId, role),
+        issueSession: sessions.issueSession.bind(sessions),
       }),
     },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [UsersService, StudentEmailService],
+  exports: [UsersService, StudentEmailService, RefreshTokensService, SESSION_ISSUER],
 })
 export class IdentityModule {}
