@@ -116,6 +116,8 @@ export const periodEnrollments = pgTable(
     linkOpenedAt: timestamp('link_opened_at', { withTimezone: true }),
     attemptsLeft: integer('attempts_left').notNull().default(4),
     reminderStage: integer('reminder_stage').notNull().default(0),
+    linkClaimedAt: timestamp('link_claimed_at', { withTimezone: true }),
+    deviceFingerprintHash: text('device_fingerprint_hash'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('uq_enrollment_period_student').on(t.periodId, t.studentId)],

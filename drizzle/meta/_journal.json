@@ -15,6 +15,13 @@
       "when": 1756000000000,
       "tag": "0001_refresh_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756100000000,
+      "tag": "0002_magic_links",
+      "breakpoints": true
     }
   ]
 }
