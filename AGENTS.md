@@ -86,10 +86,13 @@ grace countdown [CLAIM NOW!]
 - UI is mobile-first; card status updates live without refresh
 
 ## Delivery Status (update after each merged PR)
+
 - F1 scaffold: DONE (CI green: lint, unit, integration, compose-smoke)
 - F2-auth: DONE — JWT access+refresh rotation, requireAuth/requireRole guards,
-  roles student/lecturer/admin, admin provisions staff accounts
-- NEXT: F2 master data (bulk import/export, period CRUD, bulk actions)
+  roles student/lecturer/admin
+- F2 master data: DONE — bulk import/export xlsx/csv w/ validation, period CRUD
+  - lifecycle + clone, bulk actions, admin shadcn/ui tables
+- NEXT: F3 magic link system
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
