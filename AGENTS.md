@@ -96,7 +96,11 @@ grace countdown [CLAIM NOW!]
   BullMQ one-shot delayed stage scheduler w/ exactly-once guard, admin delivery
   dashboard + audited resend. Note: scheduling uses one-shot delayed jobs from
   period.scheduled event, NOT interval repeatables. EmailProvider port w/ stub.
-- NEXT: F4 pre-war lobby
+- F4 pre-war lobby: DONE — server-authoritative countdown (/api/lobby serverTime),
+  EmbeddingProvider port + student_preferences (pgvector 1536-dim, hashing stub,
+  local MiniLM plugs in later), auto-war opt-in w/ persisted consent, rules page,
+  dedicated secrecy suite (23 student endpoints asserted pre-opens_at).
+- NEXT: F5 war engine (CORE — race condition critical)
 
 
 ## Implementation Notes (gotchas discovered)
