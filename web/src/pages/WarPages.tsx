@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { api } from '../lib/api';
+import { connectRealtime, joinLobby, onCardUpdate } from '../lib/realtime';
 
 interface Catalog {
   mySelections: Array<{
@@ -57,16 +58,38 @@ export function WarRoomPage() {
 
   useEffect(() => void load(), [load]);
 
-  // live-ish grid + heartbeat while tab visible
+  // realtime cards (socket) with heartbeat + slow poll fallback
   useEffect(() => {
     if (!periodId) return;
+    const sock = connectRealtime();
+    if (sock) joinLobby(periodId);
+    const offCard = onCardUpdate((update) => {
+      if (update.periodId !== periodId) return;
+      setCatalog((prev) =>
+        prev
+          ? {
+              ...prev,
+              theses: prev.theses.map((t) =>
+                t.id === update.thesisId
+                  ? { ...t, status: update.status, lockedUntil: update.lockedUntil ?? null }
+                  : t,
+              ),
+            }
+          : prev,
+      );
+    });
+    const onVis = (): void => {
+      if (document.visibilityState === 'visible') void load(); // reconnect reconciliation
+    };
+    document.addEventListener('visibilitychange', onVis);
     pollRef.current = setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       void api('/war/heartbeat', { method: 'POST', body: { periodId } }).catch(() => undefined);
-      void load();
-    }, 4000);
+    }, 5000);
     void api('/war/heartbeat', { method: 'POST', body: { periodId } }).catch(() => undefined);
     return () => {
+      offCard();
+      document.removeEventListener('visibilitychange', onVis);
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [periodId, load]);

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { onBanner, connectRealtime } from './lib/realtime';
 import { RequireAdmin, LogoutButton, LoginPage } from './auth';
 import { StudentsPage } from './pages/StudentsPage';
 import { PeriodsPage } from './pages/PeriodsPage';
@@ -7,6 +9,21 @@ import { DeliveriesPage } from './pages/DeliveriesPage';
 import { LobbyPage, MagicEntryPage } from './pages/StudentPages';
 import { RulesPage } from './pages/RulesPage';
 import { ReceiptPage, WarRoomPage } from './pages/WarPages';
+
+function BannerToast() {
+  const [banner, setBanner] = useState<{ message: string; at: string } | null>(null);
+  useEffect(() => {
+    connectRealtime();
+    return onBanner(setBanner);
+  }, []);
+  if (!banner) return null;
+  return (
+    <div role="alert" className="fixed inset-x-3 top-14 z-50 mx-auto max-w-md rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
+      {banner.message}
+      <button className="ml-3 underline" onClick={() => setBanner(null)}>dismiss</button>
+    </div>
+  );
+}
 
 function Shell() {
   const location = useLocation();
@@ -31,6 +48,7 @@ function Shell() {
         ))}
         <span className="ml-auto"><LogoutButton /></span>
       </nav>
+      <BannerToast />
       <main className="mx-auto max-w-5xl p-4 sm:p-6">
         <Routes>
           <Route path="/students" element={<StudentsPage />} />
