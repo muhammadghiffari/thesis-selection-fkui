@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { IsIn, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { ConflictException, HttpException } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthUser } from '../identity/auth-user.js';
 import { Roles } from '../identity/decorators/roles.decorator.js';
@@ -34,15 +35,27 @@ function requireUser(req: Request): AuthUser {
   return user;
 }
 
+/** Maps service-level {status} domain errors onto HTTP semantics. */
+function toHttpError(err: unknown): never {
+  const status = (err as { status?: number }).status;
+  if (status === 429) throw new HttpException((err as Error).message, 429);
+  if (status === 410) throw new ConflictException((err as Error).message);
+  throw err as Error;
+}
+
 @Roles('student')
 @Controller('swaps')
 export class SwapController {
   constructor(@Inject(SwapService) private readonly swaps: SwapService) {}
 
   @Post()
-  request(@Req() req: Request, @Body() dto: CreateSwapDto) {
+  async request(@Req() req: Request, @Body() dto: CreateSwapDto) {
     const user = requireUser(req);
-    return this.swaps.request(user, dto);
+    try {
+      return await this.swaps.request(user, dto);
+    } catch (err) {
+      toHttpError(err);
+    }
   }
 
   @Get('mine')
@@ -58,9 +71,13 @@ export class SwapController {
 
   /** Old owner re-wars during the grace window. */
   @Post('grace/:selectionId/reclaim')
-  reclaim(@Req() req: Request, @Param('selectionId') selectionId: string) {
+  async reclaim(@Req() req: Request, @Param('selectionId') selectionId: string) {
     const user = requireUser(req);
-    return this.swaps.reclaim(user, selectionId);
+    try {
+      return await this.swaps.reclaim(user, selectionId);
+    } catch (err) {
+      toHttpError(err);
+    }
   }
 }
 

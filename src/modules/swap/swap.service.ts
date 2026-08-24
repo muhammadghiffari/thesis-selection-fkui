@@ -358,7 +358,7 @@ export class SwapService {
       JOIN thesis_selections ts ON ts.id = r.selection_id
       JOIN students s ON s.id = ts.student_id
       WHERE s.user_id = ${userId}
-        AND r.requested_at > now() - INTERVAL '${sql.raw(String(SWAP_COOLDOWN_SEC))} seconds'
+        AND r.requested_at > now() - (${SWAP_COOLDOWN_SEC} * INTERVAL '1 second')
       LIMIT 1
     `);
     if (recent.rows.length > 0) {
