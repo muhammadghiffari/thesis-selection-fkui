@@ -1,4 +1,4 @@
-import { index, inet, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid, vector } from 'drizzle-orm/pg-core';
+import { boolean, index, inet, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid, vector } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -118,6 +118,8 @@ export const periodEnrollments = pgTable(
     reminderStage: integer('reminder_stage').notNull().default(0),
     linkClaimedAt: timestamp('link_claimed_at', { withTimezone: true }),
     deviceFingerprintHash: text('device_fingerprint_hash'),
+    autoWarEnabled: boolean('auto_war_enabled').notNull().default(false),
+    autoWarConsentedAt: timestamp('auto_war_consented_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('uq_enrollment_period_student').on(t.periodId, t.studentId)],
@@ -250,3 +252,21 @@ export const notificationDeliveries = pgTable('notification_deliveries', {
   retryCount: integer('retry_count').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const studentPreferences = pgTable(
+  'student_preferences',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id),
+    periodId: uuid('period_id')
+      .notNull()
+      .references(() => selectionPeriods.id),
+    interestText: text('interest_text').notNull(),
+    embedding: vector('embedding', { dimensions: 1536 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('uq_preference_period_student').on(t.periodId, t.studentId)],
+);
