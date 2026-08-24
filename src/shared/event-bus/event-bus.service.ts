@@ -8,6 +8,9 @@ import { Subject } from 'rxjs';
  */
 export interface DomainEvents {
   'period.scheduled': { periodId: string; opensAt: string; closesAt: string | null };
+  'war.lock': { periodId: string; thesisId: string; lockedUntil: string };
+  'war.taken': { periodId: string; thesisId: string; referenceNumber: string | null };
+  'war.available': { periodId: string; thesisId: string };
   'selection.confirmed': {
     userId: string;
     periodId: string;
