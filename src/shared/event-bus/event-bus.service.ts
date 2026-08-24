@@ -9,6 +9,19 @@ import { Subject } from 'rxjs';
 export interface DomainEvents {
   'period.scheduled': { periodId: string; opensAt: string; closesAt: string | null };
   'war.lock': { periodId: string; thesisId: string; lockedUntil: string };
+  'swap.requested': { periodId: string; thesisId: string };
+  'swap.cancelled': { periodId: string; thesisId: string };
+  'swap.approved': { periodId: string; thesisId: string; graceUntil: string };
+  'swap.rejected': { periodId: string; thesisId: string };
+  'swap.released': { periodId: string; thesisId: string };
+  'swap.reclaimed': { periodId: string; thesisId: string };
+  'watcher.available': {
+    userId: string;
+    periodId: string;
+    thesisId: string;
+    title: string;
+    referenceNumber: string | null;
+  };
   'war.taken': { periodId: string; thesisId: string; referenceNumber: string | null };
   'war.available': { periodId: string; thesisId: string };
   'selection.confirmed': {

@@ -163,6 +163,7 @@ export const swapRequests = pgTable('swap_requests', {
   selectionId: uuid('selection_id')
     .notNull()
     .references(() => thesisSelections.id),
+  idempotencyKey: uuid('idempotency_key').unique(),
   category: text().notNull(),
   reasonDetail: text('reason_detail').notNull(),
   status: text().notNull().default('pending'),
