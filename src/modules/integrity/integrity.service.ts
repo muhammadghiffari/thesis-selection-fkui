@@ -45,7 +45,9 @@ export class IntegrityService {
   }
 
   /** Runs scoring + HIGH notifications. Used by worker AND directly by tests. */
-  async runScore(selectionId: string): Promise<{ score: number; level: string }> {
+  async runScore(
+    selectionId: string,
+  ): Promise<{ score: number; level: string; skipped?: 'already-reviewed' }> {
     const result = await this.scorer.scoreSelection(selectionId);
     if (result.level === 'high' && !result.skipped) {
       await this.notifyHighOnce(selectionId, result.score, result.signals);

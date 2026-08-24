@@ -40,7 +40,7 @@ export class IntegrityScorer {
     const sel = (
       await this.db.execute(sql`
         SELECT ts.id, ts.student_id, ts.status, ts.created_at, ts.confirmed_at,
-               ts.ip_address::text AS ip_address, ts.period_id,
+               split_part(host(ts.ip_address), '/', 1) AS ip_address, ts.period_id,
                s.research_track, s.user_id,
                th.track AS thesis_track, th.title
         FROM thesis_selections ts
@@ -115,14 +115,14 @@ export class IntegrityScorer {
         FROM thesis_selections ts
         WHERE ts.period_id = ${sel.period_id}
           AND ts.deleted_at IS NULL
-          AND host(ts.ip_address)::text = ${truncateIp(sel.ip_address)}
+          AND split_part(host(ts.ip_address), '/', 1) = ${sel.ip_address}
       `);
       const ipCount = ((ipUsers.rows[0] as { n: number } | undefined)?.n) ?? 1;
       if (ipCount > 2) {
         signals.push({
           rule: 'ip_sharing',
           points: WEIGHTS.ip_sharing,
-          evidence: { ipPrefix: truncateIp(sel.ip_address), usersOnIp: ipCount },
+          evidence: { ipPrefix: sel.ip_address, usersOnIp: ipCount },
         });
       }
     }
