@@ -45,6 +45,13 @@ export class SwapService {
   ) {
     this.runner = new SwapRunner(db, redis, email);
     this.throttle = createThrottle(redis, 'rl:swap', 10, SWAP_COOLDOWN_SEC);
+
+    // integrity module asks for revocation via the bus — swap owns the transition
+    this.events.on('swap.revoke_requested', ({ selectionId, reason, actorId }) => {
+      void this.revoke({ sub: actorId, role: 'admin' }, selectionId, reason).catch((err) => {
+        console.error('bus revoke failed', err);
+      });
+    });
   }
 
   /**

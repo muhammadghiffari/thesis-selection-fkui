@@ -15,6 +15,8 @@ export interface DomainEvents {
   'swap.rejected': { periodId: string; thesisId: string };
   'swap.released': { periodId: string; thesisId: string };
   'swap.reclaimed': { periodId: string; thesisId: string };
+  'integrity.flagged': { selectionId: string; level: string; score: number };
+  'swap.revoke_requested': { selectionId: string; reason: string; actorId: string };
   'watcher.available': {
     userId: string;
     periodId: string;
