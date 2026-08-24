@@ -1,4 +1,5 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'node:crypto';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
@@ -7,6 +8,7 @@ import type { AuthUser } from './auth-user.js';
 
 export const REFRESH_TTL_SEC = 7 * 24 * 60 * 60; // 7 days
 const TOKEN_BYTES = 48;
+const ACCESS_TTL = '15m';
 
 export interface IssuedRefreshToken {
   raw: string;
@@ -20,10 +22,22 @@ export interface IssuedRefreshToken {
  */
 @Injectable()
 export class RefreshTokensService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(JwtService) private readonly jwt: JwtService,
+  ) {}
 
   private hash(raw: string): string {
     return createHash('sha256').update(raw).digest('hex');
+  }
+
+  /** Full session pair for an already-authenticated user id (magic-link claims reuse this). */
+  async issueSession(userId: string, role: AuthUser['role']): Promise<{ accessToken: string; refreshToken: string }> {
+    const [accessToken, refresh] = await Promise.all([
+      this.jwt.signAsync({ sub: userId, role } satisfies AuthUser, { expiresIn: ACCESS_TTL }),
+      this.issue(userId),
+    ]);
+    return { accessToken, refreshToken: refresh.raw };
   }
 
   async issue(userId: string): Promise<IssuedRefreshToken> {

@@ -1,4 +1,5 @@
-import { bootWorkers } from './index.js';
+import { bootWorkers, type Processors } from './index.js';
+import { createEmailProcessor } from './processors/email.js';
 
 async function main(): Promise<void> {
   const redisUrl = process.env.REDIS_URL;
@@ -6,8 +7,10 @@ async function main(): Promise<void> {
     console.error('REDIS_URL is required');
     process.exit(1);
   }
-  // ponytail: processor registry intentionally empty until F2/F3 land their jobs.
-  const running = await bootWorkers(redisUrl, {});
+  const processors: Processors = {
+    email: createEmailProcessor().processor,
+  };
+  const running = await bootWorkers(redisUrl, processors);
   console.log(`workers online (${running.workers.length} registered)`);
 
   let stopping = false;

@@ -8,8 +8,6 @@ import { RefreshTokensService } from './refresh-tokens.service.js';
 import { StudentEmailService } from './student-email.service.js';
 import { UsersService } from './users.service.js';
 
-const ACCESS_TTL = '15m';
-
 /** argon2id hash of a random string; verifies against unknown emails to equalize timing. */
 const DUMMY_HASH =
   '$argon2id$v=19$m=19456,t=2,p=1$ZHVtbXlzYWx0ZHVtbXlzYWx0$0W7zUaMOCiWTG9j6nd1ErjEWdPTTKTfKRVhzG3ezFcs';
@@ -104,10 +102,6 @@ export class AuthService {
   }
 
   private async issueSession(userId: string, role: Role): Promise<TokenPair> {
-    const [accessToken, refresh] = await Promise.all([
-      this.jwt.signAsync({ sub: userId, role } satisfies AuthUser, { expiresIn: ACCESS_TTL }),
-      this.refreshTokens.issue(userId),
-    ]);
-    return { accessToken, refreshToken: refresh.raw };
+    return this.refreshTokens.issueSession(userId, role);
   }
 }

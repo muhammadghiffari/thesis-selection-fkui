@@ -9,6 +9,12 @@ export interface AppConfig {
   studentDomains: string[];
   nodeEnv: string;
   isProd: boolean;
+  /** Claim window after FIRST OPEN of a magic link (seconds). */
+  magicLinkTtlSec: number;
+  /** Absolute cap on an unopened emailed link (days). */
+  magicLinkMaxAgeDays: number;
+  /** stub | resend — stub records sends without hitting an API. */
+  mailProvider: 'stub' | 'resend';
 }
 
 function requireEnv(name: string): string {
@@ -34,5 +40,9 @@ export const appConfig = registerAs('app', (): AppConfig => {
     studentDomains: parseStudentDomains(process.env.STUDENT_DOMAINS),
     nodeEnv,
     isProd: nodeEnv === 'production',
+    magicLinkTtlSec: Number(process.env.MAGIC_LINK_TTL_SEC ?? 900),
+    magicLinkMaxAgeDays: Number(process.env.MAGIC_LINK_MAX_AGE_DAYS ?? 30),
+    mailProvider:
+      process.env.MAIL_PROVIDER === 'resend' || process.env.RESEND_API_KEY ? 'resend' : 'stub',
   };
 });

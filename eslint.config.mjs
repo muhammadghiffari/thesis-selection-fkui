@@ -13,8 +13,21 @@ export default tseslint.config(
     },
   },
   {
-    // CLI entrypoints legitimately print to stdout/stderr
-    files: ['src/scripts/**', 'src/**/*-cli.ts', 'workers/src/main.ts'],
+    // CLI entrypoints + async event handlers legitimately print
+    files: ['src/scripts/**', 'src/**/*-cli.ts', 'workers/src/**/*.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    files: ['**/*.test.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    // event-bus handlers must not crash the process; logging the failure is right
+    files: ['src/modules/notifications/notifications.service.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    files: ['**/*.test.ts', '**/*test*.ts'],
     rules: { 'no-console': 'off' },
   },
 );

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { SESSION_ISSUER } from '../../shared/auth/session.port.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -29,9 +30,17 @@ import { UsersService } from './users.service.js';
     StudentEmailService,
     RefreshTokensService,
     LoginRateLimiter,
+    {
+      // port adapter — consumers depend on the shared interface, not this class
+      provide: SESSION_ISSUER,
+      inject: [RefreshTokensService],
+      useFactory: (sessions: RefreshTokensService) => ({
+        issueSession: sessions.issueSession.bind(sessions),
+      }),
+    },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [UsersService, StudentEmailService],
+  exports: [UsersService, StudentEmailService, RefreshTokensService, SESSION_ISSUER],
 })
 export class IdentityModule {}

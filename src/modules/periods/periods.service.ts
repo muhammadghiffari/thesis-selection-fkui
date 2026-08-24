@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
+import { EventBus } from '../../shared/event-bus/event-bus.service.js';
 import { selectionPeriods, type PeriodSettings } from '../../shared/db/schema.js';
 import { assertTransition, type PeriodStatus } from './lifecycle.js';
 
@@ -15,7 +16,10 @@ interface CreateInput {
 
 @Injectable()
 export class PeriodsService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(EventBus) private readonly events: EventBus,
+  ) {}
 
   list(): Promise<PeriodRow[]> {
     return this.db
@@ -109,6 +113,15 @@ export class PeriodsService {
       .set({ status: to })
       .where(eq(selectionPeriods.id, id))
       .returning();
+
+    // cross-module side effects (reminder scheduling) ride the event bus
+    if (to === 'scheduled' && row) {
+      this.events.emit('period.scheduled', {
+        periodId: row.id,
+        opensAt: (row.opensAt as Date).toISOString(),
+        closesAt: row.closesAt ? row.closesAt.toISOString() : null,
+      });
+    }
     return row!;
   }
 
