@@ -1,5 +1,6 @@
 import { bootWorkers, type Processors } from './index.js';
 import { createEmailProcessor } from './processors/email.js';
+import { createExpiryEventsProcessor } from './processors/expiry-events.js';
 
 async function main(): Promise<void> {
   const redisUrl = process.env.REDIS_URL;
@@ -9,6 +10,7 @@ async function main(): Promise<void> {
   }
   const processors: Processors = {
     email: createEmailProcessor().processor,
+    expiry_events: createExpiryEventsProcessor(),
   };
   const running = await bootWorkers(redisUrl, processors);
   console.log(`workers online (${running.workers.length} registered)`);
