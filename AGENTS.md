@@ -110,8 +110,12 @@ grace countdown [CLAIM NOW!]
   rooms lobby:{periodId}/admin/lecturer:{id}/thesis:{id}, JWT handshake guard,
   reconnect = REST snapshot reconciliation (churn test 0 mismatches), admin
   broadcast banner (audited), measured latency 27-36ms.
-- NEXT: F7 swap engine
-
+- F7 swap engine: DONE — full state machine w/ transition matrix green, grace
+  expiry via delayed BullMQ job, reclaim-during-grace, watchers (cap 10,
+  exactly-once notify via atomic notified_at=transition-ts), mandatory decision
+  notes, revoke w/ reason, idempotency keys on swaps. Realtime via existing bus
+  mappings only.
+- NEXT: F8 supervisor dashboard + integrity scoring
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
