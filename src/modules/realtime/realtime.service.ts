@@ -10,10 +10,10 @@ export const REALTIME_CHANNEL = 'realtime:events';
 export interface RealtimeMessage {
   event:
     | 'war.card'
-    | 'selection.confirmed'
+    | 'swap.state'
+    | 'notification'
     | 'monitor'
-    | 'banner'
-    | 'lobby.time';
+    | 'banner';
   room?: string;
   payload: Record<string, unknown>;
 }
@@ -100,6 +100,55 @@ export class RealtimeService {
     this.events.on('war.lock', cardStatus('war.lock'));
     this.events.on('war.taken', cardStatus('war.taken'));
     this.events.on('war.available', cardStatus('war.available'));
+
+    const swapState =
+      (
+        state: string,
+        extra?: (payload: Record<string, unknown>) => Record<string, unknown>,
+      ) =>
+      (payload: Record<string, unknown>) => {
+        const body = { thesisId: payload.thesisId, state, ...(extra ? extra(payload) : {}) };
+        void this.publish({ event: 'swap.state', room: `lobby:${payload.periodId}`, payload: body });
+        void this.publish({ event: 'swap.state', room: `thesis:${payload.thesisId}`, payload: body });
+      };
+
+    this.events.on('swap.requested', swapState('swap_requested'));
+    this.events.on('swap.approved', swapState('pending_release', (p) => ({ graceUntil: p.graceUntil })));
+    this.events.on('swap.reclaimed', swapState('owned'));
+
+    // rejection/cancel restore ownership → cards read as taken again
+    for (const evt of ['swap.cancelled', 'swap.rejected'] as const) {
+      this.events.on(evt, (payload: Record<string, unknown>) => {
+        void this.publish({
+          event: 'war.card',
+          room: `lobby:${payload.periodId}`,
+          payload: { periodId: payload.periodId, thesisId: payload.thesisId, status: 'taken' },
+        });
+        void this.publish({
+          event: 'war.card',
+          room: `thesis:${payload.thesisId}`,
+          payload: { periodId: payload.periodId, thesisId: payload.thesisId, status: 'taken' },
+        });
+      });
+    }
+
+    // swap release frees the title for everyone
+    this.events.on('swap.released', (payload: Record<string, unknown>) => {
+      void this.publish({
+        event: 'war.card',
+        room: `lobby:${payload.periodId}`,
+        payload: { periodId: payload.periodId, thesisId: payload.thesisId, status: 'available' },
+      });
+    });
+
+    // per-user in-app notifications (watchers)
+    this.events.on('watcher.available', (payload) => {
+      void this.publish({
+        event: 'notification',
+        room: `user:${(payload as { userId: string }).userId}`,
+        payload: { ...payload },
+      });
+    });
 
     this.events.on('selection.confirmed', (payload) => {
       void this.publish({ event: 'monitor', room: 'admin', payload: { ...payload } });
