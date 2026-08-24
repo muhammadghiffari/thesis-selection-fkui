@@ -100,7 +100,13 @@ grace countdown [CLAIM NOW!]
   EmbeddingProvider port + student_preferences (pgvector 1536-dim, hashing stub,
   local MiniLM plugs in later), auto-war opt-in w/ persisted consent, rules page,
   dedicated secrecy suite (23 student endpoints asserted pre-opens_at).
-- NEXT: F5 war engine (CORE — race condition critical)
+- F5 war engine: DONE — Redis SET NX EX 30s + dual partial unique indexes,
+  race suite 100 users = 1 winner/0 double-claims/0 orphans, server p95 ~370ms
+  (re-validate in F11), undo window, exactly-3 enforcement, transactional
+  reorder, idempotency keys, THS-{year}-{seq} receipts, auto-war heartbeat-gated
+  WarRunner. CRITICAL FIX: unplugin-swc decoratorMetadata added to vitest —
+  DTO validation now actually runs in tests.
+- NEXT: F6 realtime layer
 
 
 ## Implementation Notes (gotchas discovered)
