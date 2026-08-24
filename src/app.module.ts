@@ -15,6 +15,7 @@ import { EmbeddingsInfraModule } from './shared/embeddings/embeddings-infra.modu
 import { LobbyModule } from './modules/lobby/lobby.module.js';
 import { WarModule } from './modules/war/war.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
+import { SwapModule } from './modules/swap/swap.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
@@ -39,6 +40,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     LobbyModule,
     WarModule,
     RealtimeModule,
+    SwapModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
