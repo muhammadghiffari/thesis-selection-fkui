@@ -92,7 +92,12 @@ grace countdown [CLAIM NOW!]
   roles student/lecturer/admin
 - F2 master data: DONE — bulk import/export xlsx/csv w/ validation, period CRUD
   - lifecycle + clone, bulk actions, admin shadcn/ui tables
-- NEXT: F3 magic link system
+- F3 magic links: DONE — single-use JWT bound to first device fingerprint,
+  BullMQ one-shot delayed stage scheduler w/ exactly-once guard, admin delivery
+  dashboard + audited resend. Note: scheduling uses one-shot delayed jobs from
+  period.scheduled event, NOT interval repeatables. EmailProvider port w/ stub.
+- NEXT: F4 pre-war lobby
+
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
