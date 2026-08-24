@@ -10,11 +10,13 @@ import {
   students,
   users,
 } from '../../shared/db/schema.js';
+import type { DomainEvents } from '../../shared/event-bus/event-bus.service.js';
 import { EventBus } from '../../shared/event-bus/event-bus.service.js';
 import { SESSION_ISSUER, type SessionIssuer } from '../../shared/auth/session.port.js';
 import { EMAIL_PROVIDER } from '../../shared/notifications/notifications-infra.module.js';
 import type { EmailProvider } from '../../shared/notifications/email-provider.js';
 import { createEmailQueue } from './notifications.tokens.js';
+import { createExpiryQueue } from '../war/war.tokens.js';
 import { hashFingerprint, MagicTokenService } from './magic-token.service.js';
 import { StageRunner } from './stage-runner.js';
 import type { StageKey } from './stage-definitions.js';
@@ -26,6 +28,7 @@ const MIN = 60_000;
 export class NotificationsService {
   readonly runner: StageRunner;
   private readonly emailQueue: Queue;
+  private readonly expiryQueue: Queue;
 
   constructor(
     @Inject(DATABASE) private readonly db: Database,
@@ -37,13 +40,64 @@ export class NotificationsService {
   ) {
     this.runner = new StageRunner(db, email, magicTokens);
     this.emailQueue = createEmailQueue(process.env.REDIS_URL ?? 'redis://localhost:6379');
+    this.expiryQueue = createExpiryQueue(process.env.REDIS_URL ?? 'redis://localhost:6379');
 
-    // Cross-module wiring via the bus: periods never import notifications.
+    // Cross-module wiring via the bus: periods never import notifications,
+    // the war module never sends mail itself.
     this.events.on('period.scheduled', ({ periodId, opensAt }) => {
       void this.scheduleForPeriod(periodId, new Date(opensAt)).catch((err) => {
         console.error('scheduleForPeriod failed', err);
       });
     });
+    this.events.on('selection.confirmed', (evt) => {
+      void this.sendReceipt(evt).catch((err) => {
+        console.error('receipt send failed', err);
+      });
+    });
+  }
+
+  /** Success receipt per confirmed title; final one carries the full summary. */
+  private async sendReceipt(evt: DomainEvents['selection.confirmed']): Promise<void> {
+    const [user] = await this.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.id, evt.userId))
+      .limit(1);
+    if (!user) return;
+
+    const [delivery] = await this.db
+      .insert(notificationDeliveries)
+      .values({
+        userId: user.id,
+        channel: 'email',
+        template: 'selection_receipt',
+        payload: { periodId: evt.periodId, selectionId: evt.selectionId },
+        status: 'queued',
+      })
+      .returning({ id: notificationDeliveries.id });
+    if (!delivery) return;
+
+    try {
+      await this.email.send({
+        to: user.email,
+        subject: `Title confirmed — ${evt.referenceNumber ?? ''}`.trim(),
+        body:
+          `<p>You confirmed <strong>${evt.thesisTitle}</strong>` +
+          `${evt.lecturerName ? ` with ${evt.lecturerName}` : ''}.</p>` +
+          `<p>Reference: <strong>${evt.referenceNumber ?? 'pending'}</strong> at ${evt.confirmedAt} (UTC).</p>` +
+          `<p>You may undo within 15 seconds or request a swap later.</p>`,
+        deliveryId: delivery.id,
+      });
+      await this.db
+        .update(notificationDeliveries)
+        .set({ status: 'sent', sentAt: new Date() })
+        .where(eq(notificationDeliveries.id, delivery.id));
+    } catch (err) {
+      await this.db
+        .update(notificationDeliveries)
+        .set({ status: 'failed', error: String(err) })
+        .where(eq(notificationDeliveries.id, delivery.id));
+    }
   }
 
   /** One delayed job per stage; negative delays clamp to immediate. */
@@ -73,6 +127,13 @@ export class NotificationsService {
         data: { periodId, stage: j.name },
         opts: { delay: delay(j.at), attempts: 3, backoff: { type: 'exponential' as const, delay: 30_000 } },
       })),
+    );
+
+    // F5 auto-war fires exactly at opens_at (heartbeat-gated server-side)
+    await this.expiryQueue.add(
+      'auto_war',
+      { periodId },
+      { delay: delay(opensAt), attempts: 3, backoff: { type: 'exponential', delay: 10_000 } },
     );
   }
 

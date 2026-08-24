@@ -8,7 +8,15 @@ import { Subject } from 'rxjs';
  */
 export interface DomainEvents {
   'period.scheduled': { periodId: string; opensAt: string; closesAt: string | null };
-  // future: 'selection.taken', 'swap.approved', ...
+  'selection.confirmed': {
+    userId: string;
+    periodId: string;
+    selectionId: string;
+    thesisTitle: string;
+    lecturerName: string | null;
+    referenceNumber: string | null;
+    confirmedAt: string;
+  };
 }
 
 @Injectable()

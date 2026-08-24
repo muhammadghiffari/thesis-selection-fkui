@@ -13,6 +13,7 @@ import { NotificationsInfraModule } from './shared/notifications/notifications-i
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { EmbeddingsInfraModule } from './shared/embeddings/embeddings-infra.module.js';
 import { LobbyModule } from './modules/lobby/lobby.module.js';
+import { WarModule } from './modules/war/war.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
@@ -35,6 +36,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     PeriodsModule,
     NotificationsModule,
     LobbyModule,
+    WarModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })

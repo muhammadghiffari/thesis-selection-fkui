@@ -121,9 +121,9 @@ const MANIFEST: Array<{
   { method: 'GET', path: `/lobby/preferences?periodId=${'{p}'}`, expect: 'noThesisData' },
   { method: 'GET', path: '/auth/me', expect: 'noThesisData' },
   // public flows
-  { method: 'POST', path: '/auth/login', body: { email: 'x@y.z', password: 'wrong-password' }, expect: 401 },
-  { method: 'POST', path: '/magic/open', body: { token: 'garbage-token-value', fingerprint: 'fp' }, expect: 401 },
-  { method: 'POST', path: '/magic/claim', body: { token: 'garbage-token-value', fingerprint: 'fp' }, expect: 401 },
+  { method: 'POST', path: '/auth/login', body: { email: 'x@y.com', password: 'wrong-password' }, expect: 401 },
+  { method: 'POST', path: '/magic/open', body: { token: 'garbage-token-value-0123456789', fingerprint: 'fp-00000000' }, expect: 401 },
+  { method: 'POST', path: '/magic/claim', body: { token: 'garbage-token-value-0123456789', fingerprint: 'fp-00000000' }, expect: 401 },
   // admin surface — must NOT be reachable
   { method: 'GET', path: '/admin/students', expect: 403 },
   { method: 'GET', path: '/admin/students/export.xlsx', expect: 403 },
@@ -141,6 +141,11 @@ const MANIFEST: Array<{
   { method: 'GET', path: `/admin/periods/${'{p}'}/enrollments`, expect: 403 },
   { method: 'POST', path: `/admin/periods/${'{p}'}/run-stage`, body: {}, expect: 403 },
   { method: 'POST', path: '/admin/auth/staff', body: {}, expect: 404 },
+  // F5 war surface — must be unreachable pre-opens_at
+  { method: 'GET', path: `/war/catalog?periodId=${'{p}'}`, expect: 403 },
+  { method: 'POST', path: '/war/claims', body: {}, expect: 400 },
+  { method: 'POST', path: `/war/claims/${'{p}'}/confirm`, expect: 404 },
+  { method: 'GET', path: `/war/receipt?periodId=${'{p}'}`, expect: 'noThesisData' },
 ];
 
 describe('TITLE SECRECY — no student endpoint leaks thesis data before opens_at', () => {

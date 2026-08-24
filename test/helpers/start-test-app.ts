@@ -16,6 +16,8 @@ import type { Database } from '../../src/shared/db/db.module.js';
 export interface TestApp {
   url: string;
   db: Database;
+  /** Direct redis for heartbeat/rate-limit assertions. */
+  redisUrl: string;
   close: () => Promise<void>;
 }
 
@@ -43,6 +45,7 @@ export async function startTestApp(): Promise<TestApp> {
   return {
     url: `http://localhost:${address.port}`,
     db: pg.db,
+    redisUrl: redis.getConnectionUrl(),
     close: async () => {
       await app.close();
       await pg.end();

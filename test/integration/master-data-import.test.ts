@@ -100,7 +100,14 @@ describe('student import — validation edge cases', () => {
     expect(preview.json.valid).toBe(2);
 
     const commit = await postJson('/admin/students/import/commit', token, {
-      rows: rowsOf(preview.json).map((r) => r.data),
+      // validated rows expose camelCase fields regardless of CSV headers
+      rows: rowsOf(preview.json).map((r) => ({
+        npm: r.data.npm,
+        fullName: r.data.fullName,
+        email: r.data.email,
+        classType: r.data.classType,
+        researchTrack: r.data.researchTrack,
+      })),
     });
     expect(commit.status).toBe(201);
     expect((commit.json.inserted as unknown[]).length).toBe(2);

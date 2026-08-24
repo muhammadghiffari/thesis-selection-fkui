@@ -6,6 +6,7 @@ import { ThesesPage } from './pages/ThesesPage';
 import { DeliveriesPage } from './pages/DeliveriesPage';
 import { LobbyPage, MagicEntryPage } from './pages/StudentPages';
 import { RulesPage } from './pages/RulesPage';
+import { ReceiptPage, WarRoomPage } from './pages/WarPages';
 
 function Shell() {
   const location = useLocation();
@@ -51,6 +52,8 @@ export default function App() {
         <Route path="/magic/:token" element={<MagicEntryPage />} />
         <Route path="/lobby" element={<LobbyPage />} />
         <Route path="/rules" element={<RulesPage />} />
+        <Route path="/war" element={<WarRoomPage />} />
+        <Route path="/receipt" element={<ReceiptPage />} />
         {/* admin shell */}
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAdmin />}>

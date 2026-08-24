@@ -152,6 +152,7 @@ export const thesisSelections = pgTable('thesis_selections', {
   ipAddress: inet('ip_address'),
   userAgent: text('user_agent'),
   idempotencyKey: uuid('idempotency_key').unique(),
+  referenceNumber: text('reference_number'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
