@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
+import { ArrayMinSize, IsArray, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import type { Request, Response } from 'express';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { assertUploadable, parseSpreadsheet } from '../../shared/parsing/spreadsheet.js';
@@ -32,7 +32,7 @@ export class ThesisListQueryDto {
 export class ThesisCommitDto {
   @IsUUID() periodId!: string;
   /** Rows may carry lecturer_full_name; server resolves/creates lecturers. */
-  @IsArray() @MinLength(1) rows!: Array<{
+  @ArrayMinSize(1) @IsArray() rows!: Array<{
     title: string;
     track: string;
     description?: string;

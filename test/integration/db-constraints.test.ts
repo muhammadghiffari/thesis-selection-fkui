@@ -1,6 +1,5 @@
 import { RedisContainer, type StartedRedisContainer } from '@testcontainers/redis';
 import { sql } from 'drizzle-orm';
-import Redis from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../../src/shared/db/db.module.js';
 import { startPostgres, type PgFixture } from '../helpers/spin-postgres.js';
@@ -230,12 +229,6 @@ describe('activity_logs monthly partitions', () => {
 
 describe('redis connectivity (health-indicator sanity)', () => {
   it('answers PING', async () => {
-    const client = new Redis(redis.getConnectionUrl(), { maxRetriesPerRequest: 1, lazyConnect: true });
-    try {
-      await client.connect();
-      expect(await client.ping()).toBe('PONG');
-    } finally {
-      client.disconnect();
-    }
+    expect((await redis.executeCliCmd('PING')).trim()).toBe('PONG');
   });
 });

@@ -110,7 +110,8 @@ export class WarRunner {
       ).rows[0] as { prio: number };
 
       const seq = (await this.db.execute(sql`SELECT nextval('ref_number_seq') AS v`)).rows[0] as { v: string };
-      const year = (await this.academicYear(periodId)) ?? '0000';
+      const rawYear = (await this.academicYear(periodId)) ?? '0000';
+      const year = rawYear.replace(/[^0-9]/g, '').slice(0, 4) || '0000';
       const ref = `THS-${year}-${String(Number(seq.v)).padStart(6, '0')}`;
 
       try {

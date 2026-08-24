@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, ConflictException, GoneException } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import type { Request } from 'express';
@@ -25,6 +25,14 @@ export class ReorderDto {
 export class HeartbeatDto {
   @IsUUID() periodId!: string;
   @IsOptional() @Type(() => Boolean) @IsBoolean() tabVisible?: boolean;
+}
+
+/** Maps service-level {status} domain errors onto HTTP semantics. */
+function toHttpError(err: unknown): never {
+  const status = (err as { status?: number }).status;
+  if (status === 410) throw new GoneException((err as Error).message);
+  if (status === 409) throw new ConflictException((err as Error).message);
+  throw err as Error;
 }
 
 function requireUser(req: Request): AuthUser {
@@ -56,9 +64,13 @@ export class WarController {
   }
 
   @Post('claims/:id/confirm')
-  confirm(@Req() req: Request, @Param('id') id: string) {
+  async confirm(@Req() req: Request, @Param('id') id: string) {
     const user = requireUser(req);
-    return this.war.confirm(user, id);
+    try {
+      return await this.war.confirm(user, id);
+    } catch (err) {
+      toHttpError(err);
+    }
   }
 
   @Post('claims/:id/release')
@@ -69,9 +81,13 @@ export class WarController {
 
   /** Undo inside the configured window post-confirm; later → 410 Gone. */
   @Post('claims/:id/undo')
-  undo(@Req() req: Request, @Param('id') id: string) {
+  async undo(@Req() req: Request, @Param('id') id: string) {
     const user = requireUser(req);
-    return this.war.undo(user, id);
+    try {
+      return await this.war.undo(user, id);
+    } catch (err) {
+      toHttpError(err);
+    }
   }
 
   /** Priority reorder (1..3) in one transaction. */

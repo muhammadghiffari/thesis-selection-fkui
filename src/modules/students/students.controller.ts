@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import type { Request, Response } from 'express';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { assertUploadable, parseSpreadsheet } from '../../shared/parsing/spreadsheet.js';
@@ -31,11 +31,11 @@ export class ListQueryDto {
 }
 
 export class CommitImportDto {
-  @IsArray() @MinLength(1) rows!: IncomingStudent[];
+  @ArrayMinSize(1) @IsArray() rows!: IncomingStudent[];
 }
 
 export class BulkActionDto {
-  @IsArray() @IsString({ each: true }) @MinLength(1) studentIds!: string[];
+  @ArrayMinSize(1) @IsArray() @IsString({ each: true }) studentIds!: string[];
   @IsIn(['assign_slots', 'send_magic_links', 'reset_attempts', 'deactivate'])
   action!: 'assign_slots' | 'send_magic_links' | 'reset_attempts' | 'deactivate';
   /** Required for enrollment-scoped actions (assign_slots / reset_attempts / magic links). */

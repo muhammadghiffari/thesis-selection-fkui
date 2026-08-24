@@ -62,30 +62,40 @@ export class WarService {
 
   // ---------- guards ----------
 
-  /** War endpoints answer 403 before opens_at (title secrecy) and after closes_at. */
+  /**
+   * War endpoints answer 403 before opens_at (title secrecy) and after
+   * closes_at. Period state is checked FIRST so unenrolled students cannot
+   * distinguish enrollment facts about closed periods either.
+   */
   async assertWarOpen(userId: string, periodId: string): Promise<{ studentId: string; settings: Record<string, unknown> }> {
-    const [row] = await this.db
+    const [period] = await this.db
       .select({
         opensAt: selectionPeriods.opensAt,
         closesAt: selectionPeriods.closesAt,
         status: selectionPeriods.status,
         settings: selectionPeriods.settings,
-        studentId: students.id,
       })
+      .from(selectionPeriods)
+      .where(and(eq(selectionPeriods.id, periodId), isNull(selectionPeriods.deletedAt)))
+      .limit(1);
+    if (!period) throw new NotFoundException('Period not found');
+
+    const now = Date.now();
+    if (!period.opensAt || period.status === 'draft' || period.status === 'scheduled' || now < period.opensAt.getTime()) {
+      throw new ForbiddenException('Selection has not opened yet');
+    }
+    if (!period.closesAt || now >= period.closesAt.getTime() || period.status !== 'open') {
+      throw new ConflictException('Selection window is closed');
+    }
+
+    const [enrollment] = await this.db
+      .select({ studentId: students.id })
       .from(periodEnrollments)
-      .innerJoin(selectionPeriods, eq(selectionPeriods.id, periodEnrollments.periodId))
       .innerJoin(students, eq(students.id, periodEnrollments.studentId))
       .where(and(eq(students.userId, userId), eq(periodEnrollments.periodId, periodId)))
       .limit(1);
-    if (!row) throw new NotFoundException('No enrollment for this period');
-    const now = Date.now();
-    if (!row.opensAt || row.status === 'draft' || row.status === 'scheduled' || now < row.opensAt.getTime()) {
-      throw new ForbiddenException('Selection has not opened yet');
-    }
-    if (!row.closesAt || now >= row.closesAt.getTime() || row.status !== 'open') {
-      throw new ConflictException('Selection window is closed');
-    }
-    return { studentId: row.studentId, settings: row.settings as unknown as Record<string, unknown> };
+    if (!enrollment) throw new NotFoundException('No enrollment for this period');
+    return { studentId: enrollment.studentId, settings: period.settings as unknown as Record<string, unknown> };
   }
 
   // ---------- catalog ----------
@@ -186,6 +196,7 @@ export class WarService {
 
     try {
       const priority = this.nextFreePriority(active.map((a) => a.priority));
+      const lockedUntil = new Date(Date.now() + LOCK_TTL_SEC * 1000);
       const [row] = await this.db
         .insert(thesisSelections)
         .values({
@@ -194,19 +205,23 @@ export class WarService {
           thesisId: input.thesisId,
           priority,
           status: 'locked',
-          lockedUntil: new Date(Date.now() + LOCK_TTL_SEC * 1000),
+          lockedUntil,
           idempotencyKey: input.idempotencyKey,
         })
-        .returning({ id: thesisSelections.id });
+        .returning({
+          id: thesisSelections.id,
+          lockedUntil: thesisSelections.lockedUntil,
+        });
       if (!row) throw new Error('insert returned no row');
 
+      // stored deadline (not a re-computed one) keeps idempotent replays identical
       return {
         status: 'locked',
         selection: {
           id: row.id,
           thesisId: input.thesisId,
           priority,
-          lockedUntil: new Date(Date.now() + LOCK_TTL_SEC * 1000).toISOString(),
+          lockedUntil: (row.lockedUntil ?? lockedUntil).toISOString(),
         },
       };
     } catch (err) {
