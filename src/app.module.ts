@@ -11,6 +11,8 @@ import { HealthModule } from './shared/health/health.module.js';
 import { EventBusModule } from './shared/event-bus/event-bus.module.js';
 import { NotificationsInfraModule } from './shared/notifications/notifications-infra.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { EmbeddingsInfraModule } from './shared/embeddings/embeddings-infra.module.js';
+import { LobbyModule } from './modules/lobby/lobby.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
@@ -23,6 +25,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     AuditModule,
     EventBusModule,
     NotificationsInfraModule,
+    EmbeddingsInfraModule,
     DbModule,
     RedisModule,
     HealthModule,
@@ -31,6 +34,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     ThesesModule,
     PeriodsModule,
     NotificationsModule,
+    LobbyModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
