@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { seedStaff, startTestApp, type TestApp } from '../helpers/start-test-app.js';
 
 /**
@@ -60,11 +60,17 @@ describe('period lifecycle transitions', () => {
     expect(jump.status).toBe(409);
 
     // valid chain draft→scheduled→open→closed→archived
-    for (const to of ['scheduled', 'open', 'closed', 'archived']) {
+    for (const to of ['scheduled', 'open', 'closed']) {
       const step = await call('POST', `/admin/periods/${id}/transition`, { to });
       expect(step.status).toBe(201);
       expect(step.json.status).toBe(to);
     }
+    // archiving requires a passed closes_at (F8/F9 precondition)
+    await app.db.execute(sql`
+      UPDATE selection_periods SET closes_at = now() - interval '1 minute' WHERE id = ${id}
+    `);
+    const arch = await call('POST', `/admin/periods/${id}/transition`, { to: 'archived' });
+    expect(arch.status).toBe(201);
     // archived is terminal
     const terminal = await call('POST', `/admin/periods/${id}/transition`, { to: 'closed' });
     expect(terminal.status).toBe(409);
@@ -93,8 +99,8 @@ describe('period lifecycle transitions', () => {
   });
 });
 
-describe('clone copies config, not history', () => {
-  it('cloned period: same settings, fresh draft, no enrollments/selections copied', async () => {
+describe('clone carries config AND catalog, never history (F9 semantics)', () => {
+  it('cloned period: same settings, fresh draft, titles copied, enrollments/selections empty', async () => {
     const sourceId = await createPeriod(`CloneSrc-${crypto.randomUUID()}`);
 
     // history: one enrollment + one selection on a thesis under the SOURCE period
@@ -124,15 +130,19 @@ describe('clone copies config, not history', () => {
     expect(String(clone.name)).toContain('clone');
     expect(clone.opensAt).toBeNull();
 
-    // history NOT copied
-    const cloneTheses = (await app.db.execute(sql`
-      SELECT count(*)::int AS n FROM theses WHERE period_id = ${clone.id}
+    // catalog CARRIES over (F9): same title count as the source period
+    const srcTheses = (await app.db.execute(sql`
+      SELECT count(*)::int AS n FROM theses WHERE period_id = ${sourceId} AND deleted_at IS NULL
     `)) as unknown as { rows: Array<{ n: number }> };
+    const cloneTheses = (await app.db.execute(sql`
+      SELECT count(*)::int AS n FROM theses WHERE period_id = ${clone.id} AND deleted_at IS NULL
+    `)) as unknown as { rows: Array<{ n: number }> };
+    expect(cloneTheses.rows[0]?.n).toBe(srcTheses.rows[0]!.n);
+
+    // history NEVER copies
     const cloneEnrollments = (await app.db.execute(sql`
       SELECT count(*)::int AS n FROM period_enrollments WHERE period_id = ${clone.id}
     `)) as unknown as { rows: Array<{ n: number }> };
-
-    expect(cloneTheses.rows[0]?.n).toBe(0);
     expect(cloneEnrollments.rows[0]?.n).toBe(0);
 
     // source untouched
@@ -141,6 +151,6 @@ describe('clone copies config, not history', () => {
     `)) as unknown as { rows: Array<{ n: number }> };
     expect(srcEnroll.rows[0]?.n).toBe(1);
 
-    void eq;
+
   });
 });
