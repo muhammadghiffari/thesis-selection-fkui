@@ -23,7 +23,10 @@ export default tseslint.config(
   },
   {
     // event-bus handlers must not crash the process; logging the failure is right
-    files: ['src/modules/notifications/notifications.service.ts'],
+    files: [
+      'src/modules/notifications/notifications.service.ts',
+      'src/modules/swap/swap.service.ts',
+    ],
     rules: { 'no-console': 'off' },
   },
   {

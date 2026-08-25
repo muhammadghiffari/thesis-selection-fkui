@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { onBanner, connectRealtime } from './lib/realtime';
-import { RequireAdmin, LogoutButton, LoginPage } from './auth';
+import { RequireAdmin, RequireRole, LogoutButton, LoginPage } from './auth';
 import { StudentsPage } from './pages/StudentsPage';
 import { PeriodsPage } from './pages/PeriodsPage';
 import { ThesesPage } from './pages/ThesesPage';
@@ -10,6 +10,8 @@ import { LobbyPage, MagicEntryPage } from './pages/StudentPages';
 import { RulesPage } from './pages/RulesPage';
 import { ReceiptPage, WarRoomPage } from './pages/WarPages';
 import { MySwapsPage, SwapReviewPage } from './pages/SwapPages';
+import { LecturerDashboardPage } from './pages/LecturerPages';
+import { AdminMonitorPage, AuditViewerPage, IntegrityQueuePage } from './pages/SupervisorPages';
 
 function BannerToast() {
   const [banner, setBanner] = useState<{ message: string; at: string } | null>(null);
@@ -26,6 +28,24 @@ function BannerToast() {
   );
 }
 
+function ShellLecturer() {
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <nav className="sticky top-0 z-10 flex items-center gap-1 border-b bg-white px-4 py-2">
+        <span className="mr-2 text-sm font-semibold">FKUI Supervisor</span>
+        <a href="#/lecturer" className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white">Dashboard</a>
+        <span className="ml-auto"><LogoutButton /></span>
+      </nav>
+      <main className="mx-auto max-w-5xl p-4 sm:p-6">
+        <Routes>
+          <Route path="/lecturer" element={<LecturerDashboardPage />} />
+          <Route path="*" element={<Navigate to="/lecturer" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 function Shell() {
   const location = useLocation();
   const tabs = [
@@ -34,6 +54,9 @@ function Shell() {
     { to: '/periods', label: 'Periods' },
     { to: '/deliveries', label: 'Deliveries' },
     { to: '/swaps-review', label: 'Swap review' },
+    { to: '/monitor', label: 'Monitor' },
+    { to: '/integrity', label: 'Integrity' },
+    { to: '/audit', label: 'Audit log' },
   ];
   return (
     <div className="min-h-screen bg-slate-50">
@@ -59,6 +82,9 @@ function Shell() {
           <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="/swaps-review" element={<SwapReviewPage />} />
           <Route path="/my-swaps" element={<MySwapsPage />} />
+          <Route path="/monitor" element={<AdminMonitorPage />} />
+          <Route path="/integrity" element={<IntegrityQueuePage scope="admin" />} />
+          <Route path="/audit" element={<AuditViewerPage />} />
           <Route path="*" element={<Navigate to="/students" replace />} />
         </Routes>
       </main>
@@ -76,6 +102,10 @@ export default function App() {
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/war" element={<WarRoomPage />} />
         <Route path="/receipt" element={<ReceiptPage />} />
+        {/* lecturer area (server-scoped endpoints) */}
+        <Route element={RequireRole(['lecturer', 'admin'])()}>
+          <Route path="/lecturer" element={<ShellLecturer />} />
+        </Route>
         {/* admin shell */}
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAdmin />}>
