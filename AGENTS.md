@@ -115,7 +115,11 @@ grace countdown [CLAIM NOW!]
   exactly-once notify via atomic notified_at=transition-ts), mandatory decision
   notes, revoke w/ reason, idempotency keys on swaps. Realtime via existing bus
   mappings only.
-- NEXT: F8 supervisor dashboard + integrity scoring
+- F8 supervisor integrity: DONE — rule-based scoring (6 signals, weights,
+  HIGH>=70/MEDIUM40-69/CLEAN<40) async BullMQ idempotent, lecturer dashboard
+  scoped to own theses w/ swap review + revoke + alerts (note mandatory),
+  admin live monitor + integrity queue, audit viewer. NO auto-revoke.
+- NEXT: F9
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
