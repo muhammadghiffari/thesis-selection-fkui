@@ -272,3 +272,19 @@ export const studentPreferences = pgTable(
   },
   (t) => [uniqueIndex('uq_preference_period_student').on(t.periodId, t.studentId)],
 );
+
+export const exportJobs = pgTable('export_jobs', {
+  id: uuid().primaryKey().defaultRandom(),
+  requestedBy: uuid('requested_by')
+    .notNull()
+    .references(() => users.id),
+  kind: text().notNull(),
+  periodId: uuid('period_id')
+    .notNull()
+    .references(() => selectionPeriods.id),
+  status: text().notNull().default('queued'),
+  filePath: text('file_path'),
+  error: text(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+});
