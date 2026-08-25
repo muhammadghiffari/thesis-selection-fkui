@@ -16,6 +16,7 @@ import { LobbyModule } from './modules/lobby/lobby.module.js';
 import { WarModule } from './modules/war/war.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { SwapModule } from './modules/swap/swap.module.js';
+import { IntegrityModule } from './modules/integrity/integrity.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
@@ -41,6 +42,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     WarModule,
     RealtimeModule,
     SwapModule,
+    IntegrityModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })

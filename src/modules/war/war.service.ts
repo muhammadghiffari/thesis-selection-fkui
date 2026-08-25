@@ -12,6 +12,7 @@ import {
 import { EventBus } from '../../shared/event-bus/event-bus.service.js';
 import { REDIS } from '../../shared/redis/redis.module.js';
 import type { AuthUser } from '../identity/auth-user.js';
+import { truncateIp } from '../integrity/scorer.js';
 import { WarRateLimiter } from './rate-limiter.js';
 
 export const LOCK_TTL_SEC = 30;
@@ -66,8 +67,15 @@ export class WarService {
    * War endpoints answer 403 before opens_at (title secrecy) and after
    * closes_at. Period state is checked FIRST so unenrolled students cannot
    * distinguish enrollment facts about closed periods either.
+   *
+   * F8 integrity producers: MUTATING actions against a closed window are
+   * persisted as pre-opens_at access attempts (read-only polling is normal).
    */
-  async assertWarOpen(userId: string, periodId: string): Promise<{ studentId: string; settings: Record<string, unknown> }> {
+  async assertWarOpen(
+    userId: string,
+    periodId: string,
+    opts: { logAttempts?: boolean } = {},
+  ): Promise<{ studentId: string; settings: Record<string, unknown> }> {
     const [period] = await this.db
       .select({
         opensAt: selectionPeriods.opensAt,
@@ -82,6 +90,15 @@ export class WarService {
 
     const now = Date.now();
     if (!period.opensAt || period.status === 'draft' || period.status === 'scheduled' || now < period.opensAt.getTime()) {
+      if (opts.logAttempts) {
+        await this.audit.log(
+          { id: userId, role: 'student' },
+          'integrity.preopen_attempt',
+          'period_enrollment',
+          periodId,
+          { periodId },
+        );
+      }
       throw new ForbiddenException('Selection has not opened yet');
     }
     if (!period.closesAt || now >= period.closesAt.getTime() || period.status !== 'open') {
@@ -166,10 +183,15 @@ export class WarService {
    */
   async claim(
     user: AuthUser,
-    input: { periodId: string; thesisId: string; idempotencyKey: string },
+    input: {
+      periodId: string;
+      thesisId: string;
+      idempotencyKey: string;
+      ip?: string | null;
+    },
   ): Promise<ClaimResult> {
     await this.rateLimiter.assertAllowed(user.sub);
-    const ctx = await this.assertWarOpen(user.sub, input.periodId);
+    const ctx = await this.assertWarOpen(user.sub, input.periodId, { logAttempts: true });
 
     // idempotent replay
     const existing = await this.findByKey(input.idempotencyKey);
@@ -207,6 +229,7 @@ export class WarService {
           status: 'locked',
           lockedUntil,
           idempotencyKey: input.idempotencyKey,
+          ipAddress: input.ip ? truncateIp(input.ip) : null,
         })
         .returning({
           id: thesisSelections.id,
