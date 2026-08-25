@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
 import { EventBus } from '../../shared/event-bus/event-bus.service.js';
 import { selectionPeriods, type PeriodSettings } from '../../shared/db/schema.js';
@@ -99,13 +99,33 @@ export class PeriodsService {
       .where(eq(selectionPeriods.id, id));
   }
 
-  /** Guarded lifecycle move with a pre-open sanity rule: scheduled needs a date. */
+  /**
+   * Guarded lifecycle move. Archiving additionally requires a passed
+   * closes_at AND no in-flight selections (locked / awaiting swap decision /
+   * pending grace) — everything must be final before the freeze.
+   */
   async transition(id: string, to: PeriodStatus): Promise<PeriodRow> {
     const period = await this.mustGet(id);
     assertTransition(period.status as PeriodStatus, to);
 
     if ((to === 'scheduled' || to === 'open') && !period.opensAt) {
       throw new ConflictException('opens_at must be set before scheduling/opening the period');
+    }
+
+    if (to === 'archived') {
+      const now = Date.now();
+      if (!period.closesAt || now < period.closesAt.getTime()) {
+        throw new ConflictException('closes_at must have passed before archiving');
+      }
+      const inflight = await this.db.execute(sql`
+        SELECT count(*)::int AS n FROM thesis_selections
+        WHERE period_id = ${id} AND deleted_at IS NULL
+          AND status IN ('locked','swap_requested','released_pending')
+      `);
+      const n = ((inflight.rows[0] as { n?: number } | undefined)?.n) ?? 0;
+      if (n > 0) {
+        throw new ConflictException(`${n} selection(s) still in flight — resolve swaps/grace first`);
+      }
     }
 
     const [row] = await this.db
@@ -126,25 +146,35 @@ export class PeriodsService {
   }
 
   /**
-   * Clones CONFIG ONLY into a fresh draft: settings, name, academic year.
-   * Selections/enrollments/theses are history/content and are NOT copied —
-   * next year's catalog arrives via bulk import.
+   * Clones into a fresh draft: settings/name/year + the CATALOG (titles with
+   * lecturer binding and track). Enrollments and selections are history and
+   * are NEVER copied — the new cohort starts clean.
    */
   async clone(id: string): Promise<PeriodRow> {
     const source = await this.mustGet(id);
-    const [row] = await this.db
-      .insert(selectionPeriods)
-      .values({
-        name: `${source.name} (clone)`,
-        academicYear: source.academicYear,
-        status: 'draft',
-        settings: source.settings,
-        clonedFrom: source.id,
-        opensAt: null,
-        closesAt: null,
-      })
-      .returning();
-    if (!row) throw new Error('clone insert returned no row');
+    const row = await this.db.transaction(async (tx) => {
+      const [cloned] = await tx
+        .insert(selectionPeriods)
+        .values({
+          name: `${source.name} (clone)`,
+          academicYear: source.academicYear,
+          status: 'draft',
+          settings: source.settings,
+          clonedFrom: source.id,
+          opensAt: null,
+          closesAt: null,
+        })
+        .returning();
+      if (!cloned) throw new Error('clone insert returned no row');
+
+      // catalog carries over (tracks/domains included); embeddings too — free reuse
+      await tx.execute(sql`
+        INSERT INTO theses (period_id, title, description, track, max_claims, lecturer_id, embedding)
+        SELECT ${cloned.id}, th.title, th.description, th.track, th.max_claims, th.lecturer_id, th.embedding
+        FROM theses th WHERE th.period_id = ${source.id} AND th.deleted_at IS NULL
+      `);
+      return cloned;
+    });
     return row;
   }
 

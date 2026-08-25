@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
+import { assertPeriodMutable } from '../../shared/db/guards.js';
 import { theses } from '../../shared/db/schema.js';
 
 export const MAX_WATCHES = 10;
@@ -15,6 +16,7 @@ export class WatchersService {
   async subscribe(userId: string, thesisId: string): Promise<{ subscribed: true; count: number }> {
     const [thesis] = await this.db
       .select({
+        periodId: theses.periodId,
         status: sql<string>`COALESCE((
           SELECT ts.status FROM thesis_selections ts
           WHERE ts.thesis_id = theses.id
@@ -27,6 +29,7 @@ export class WatchersService {
       .where(and(eq(theses.id, thesisId), isNull(theses.deletedAt)))
       .limit(1);
     if (!thesis) throw new NotFoundException('Thesis not found');
+    await assertPeriodMutable(this.db, thesis.periodId);
     if (!WATCHABLE.includes(thesis.status)) {
       throw new ConflictException(
         `Only titles in swap_requested/pending_release can be watched (current: ${thesis.status})`,
