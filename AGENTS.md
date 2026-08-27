@@ -124,7 +124,14 @@ grace countdown [CLAIM NOW!]
   archive preconditions + assertPeriodMutable freeze guard, clone carries
   catalog+settings (never enrollments/selections), audit indexed pagination +
   filtered CSV. Puppeteer image impact ~+1.5MB.
-- NEXT: F10 support chat
+- F10 support chat: DONE — RAG over rules-content.ts (support_chunks pgvector 1536-dim,
+  ivfflat index, idempotent upsert at startup), StubLlmProvider (dev/test) + Groq
+  (prod via GROQ_API_KEY) with 8s timeout + graceful stub fallback, title-secrecy
+  sanitization defense-in-depth, quick self-service actions (check-status no-title-leak,
+  resend-magic-link via MAGIC_RESEND_PORT, swap-guide static), escalation tickets
+  (auto-context, WhatsApp deep-link wa.me), admin queue list/resolve (mandatory note +
+  audit log), rate limits (20/min chat, 1/5min resend). Integration tests green.
+- NEXT: F11 load test 300 concurrent + hardening + PWA
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —

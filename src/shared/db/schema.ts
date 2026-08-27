@@ -288,3 +288,15 @@ export const exportJobs = pgTable('export_jobs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
 });
+
+/**
+ * F10 support chunks — FAQ RAG vector store.
+ * Primary key is the stable slug from rules-content.ts (enables idempotent upsert).
+ */
+export const supportChunks = pgTable('support_chunks', {
+  id: text().primaryKey(),           // stable slug, e.g. 'timing-overview'
+  category: text().notNull(),
+  content: text().notNull(),
+  embedding: vector('embedding', { dimensions: 1536 }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -12,6 +12,7 @@ import { EventBusModule } from './shared/event-bus/event-bus.module.js';
 import { NotificationsInfraModule } from './shared/notifications/notifications-infra.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { EmbeddingsInfraModule } from './shared/embeddings/embeddings-infra.module.js';
+import { LlmInfraModule } from './shared/llm/llm-infra.module.js';
 import { LobbyModule } from './modules/lobby/lobby.module.js';
 import { WarModule } from './modules/war/war.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
@@ -22,6 +23,7 @@ import { IdentityModule } from './modules/identity/identity.module.js';
 import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
 import { PeriodsModule } from './modules/periods/periods.module.js';
+import { SupportModule } from './modules/support/support.module.js';
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     EventBusModule,
     NotificationsInfraModule,
     EmbeddingsInfraModule,
+    LlmInfraModule,
     DbModule,
     RedisModule,
     HealthModule,
@@ -45,7 +48,9 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     SwapModule,
     IntegrityModule,
     ReportsModule,
+    SupportModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}
+

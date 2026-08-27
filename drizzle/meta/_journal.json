@@ -50,6 +50,14 @@
       "when": 1756500000000,
       "tag": "0006_reporting",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1756600000000,
+      "tag": "0007_support_chat",
+      "breakpoints": true
     }
   ]
 }
+

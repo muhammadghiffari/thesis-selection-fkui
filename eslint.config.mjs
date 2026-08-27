@@ -23,9 +23,12 @@ export default tseslint.config(
   },
   {
     // event-bus handlers must not crash the process; logging the failure is right
+    // LLM fallback logging and startup chunk seeding are also intentional
     files: [
       'src/modules/notifications/notifications.service.ts',
       'src/modules/swap/swap.service.ts',
+      'src/modules/support/support.module.ts',
+      'src/shared/llm/groq-llm-provider.ts',
     ],
     rules: { 'no-console': 'off' },
   },
