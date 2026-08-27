@@ -15,6 +15,7 @@ import { lecturers, selectionPeriods, students, swapRequests, thesisSelections }
 import { EMAIL_PROVIDER } from '../../shared/notifications/notifications-infra.module.js';
 import type { EmailProvider } from '../../shared/notifications/email-provider.js';
 import { REDIS } from '../../shared/redis/redis.module.js';
+import { assertPeriodMutable } from '../../shared/db/guards.js';
 import { createThrottle } from '../../shared/throttle/throttle.js';
 import type { AuthUser } from '../identity/auth-user.js';
 import { SwapRunner } from './swap-runner.js';
@@ -80,6 +81,7 @@ export class SwapService {
     await this.throttle.assertAllowed(user.sub);
 
     const sel = await this.ownedSelection(user.sub, input.selectionId);
+    await assertPeriodMutable(this.db, sel.periodId);
     if (sel.status !== 'confirmed' && sel.status !== 'taken') {
       throw new ConflictException(`Cannot request a swap from status '${sel.status}'`);
     }
@@ -153,6 +155,8 @@ export class SwapService {
     }
     const req = await this.reviewableRequest(requestId, user);
 
+    await assertPeriodMutable(this.db, req.periodId);
+
     const now = new Date();
     if (decision === 'approve') {
       const [p] = await this.db
@@ -213,6 +217,7 @@ export class SwapService {
   /** Old owner re-wars their own title DURING grace → keeps it. */
   async reclaim(user: AuthUser, selectionId: string): Promise<{ reclaimed: true }> {
     const sel = await this.ownedSelection(user.sub, selectionId);
+    await assertPeriodMutable(this.db, sel.periodId);
     if (sel.status !== 'released_pending') {
       throw new ConflictException(`Nothing to reclaim from status '${sel.status}'`);
     }
