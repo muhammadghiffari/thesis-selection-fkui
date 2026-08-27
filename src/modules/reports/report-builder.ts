@@ -162,7 +162,17 @@ export class ReportBuilder {
       ${rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? ''}</td>`).join('')}</tr>`).join('')}
       </table></body></html>`;
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'], executablePath });
+    let browser: import('puppeteer').Browser;
+    try {
+      browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'], executablePath });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Browser was not found') || msg.includes('Could not find expected browser')) {
+        throw new Error('pdf-browser-unavailable');
+      }
+      throw err;
+    }
+
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'networkidle0' });
