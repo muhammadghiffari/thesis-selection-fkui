@@ -119,7 +119,12 @@ grace countdown [CLAIM NOW!]
   HIGH>=70/MEDIUM40-69/CLEAN<40) async BullMQ idempotent, lecturer dashboard
   scoped to own theses w/ swap review + revoke + alerts (note mandatory),
   admin live monitor + integrity queue, audit viewer. NO auto-revoke.
-- NEXT: F9
+- F9 reporting + archive: DONE — async export jobs (xlsx ExcelJS, PDF Puppeteer
+  w/ graceful pdf-browser-unavailable), exactly-once ready-notification,
+  archive preconditions + assertPeriodMutable freeze guard, clone carries
+  catalog+settings (never enrollments/selections), audit indexed pagination +
+  filtered CSV. Puppeteer image impact ~+1.5MB.
+- NEXT: F10 support chat
 
 ## Implementation Notes (gotchas discovered)
 - Nest DI requires explicit @Inject(...) tokens (no emitDecoratorMetadata) —
