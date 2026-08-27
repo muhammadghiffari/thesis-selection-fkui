@@ -1,15 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, type OnApplicationShutdown, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 export const REDIS = Symbol('REDIS');
 
-/**
- * BullMQ needs blocking-safe connections (maxRetriesPerRequest: null);
- * API-side clients connect lazily so health checks drive readiness.
- * ponytail: explicit quit-on-shutdown arrives with the realtime module
- * (F6), which owns connection lifecycles.
- */
 export function createRedisConnection(url: string, forQueues = false): Redis {
   return new Redis(url, {
     lazyConnect: !forQueues,
@@ -29,4 +23,10 @@ export function createRedisConnection(url: string, forQueues = false): Redis {
   ],
   exports: [REDIS],
 })
-export class RedisModule {}
+export class RedisModule implements OnApplicationShutdown {
+  constructor(@Inject(REDIS) private readonly redis: Redis) {}
+
+  async onApplicationShutdown() {
+    await this.redis.quit().catch(() => this.redis.disconnect());
+  }
+}

@@ -14,7 +14,7 @@ export default tseslint.config(
   },
   {
     // CLI entrypoints + async event handlers legitimately print
-    files: ['src/scripts/**', 'src/**/*-cli.ts', 'workers/src/**/*.ts'],
+    files: ['src/scripts/**', 'src/**/*-cli.ts', 'workers/src/**/*.ts', 'test/load/**'],
     rules: { 'no-console': 'off' },
   },
   {

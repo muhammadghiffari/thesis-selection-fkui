@@ -8,6 +8,9 @@ import { Public } from '../identity/decorators/public.decorator.js';
 import { Roles } from '../identity/decorators/roles.decorator.js';
 import { NotificationsService } from './notifications.service.js';
 import { STAGE_KEYS, type StageKey } from './stage-definitions.js';
+import { createThrottle } from '../../shared/throttle/throttle.js';
+import { REDIS } from '../../shared/redis/redis.module.js';
+import type Redis from 'ioredis';
 
 export class MagicTokenDto {
   @IsString() @MinLength(20) token!: string;
@@ -41,12 +44,24 @@ export function toHttpError(err: unknown): never {
 @Public()
 @Controller('magic')
 export class MagicController {
-  constructor(@Inject(NotificationsService) private readonly notifications: NotificationsService) {}
+  private readonly throttle: ReturnType<typeof createThrottle>;
+  
+  constructor(
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+    @Inject(REDIS) redis: Redis,
+  ) {
+    // High limit to accommodate campus NATs and parallel load tests (300+ concurrent)
+    this.throttle = createThrottle(redis, 'magic:ip', 1000, 300);
+  }
 
   @Post('open')
   async open(
     @Body() dto: MagicTokenDto,
+    @Req() req: Request,
   ): Promise<{ expiresAt: string; periodId: string }> {
+    const ip = req.ip ?? 'unknown';
+    await this.throttle.assertAllowed(ip);
+    await this.throttle.record(ip);
     try {
       return await this.notifications.open(dto.token, dto.fingerprint);
     } catch (err) {
@@ -57,7 +72,11 @@ export class MagicController {
   @Post('claim')
   async claim(
     @Body() dto: MagicTokenDto,
+    @Req() req: Request,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    const ip = req.ip ?? 'unknown';
+    await this.throttle.assertAllowed(ip);
+    await this.throttle.record(ip);
     try {
       return await this.notifications.claim(dto.token, dto.fingerprint);
     } catch (err) {

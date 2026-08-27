@@ -21,7 +21,7 @@ let redis: Redis;
 const ADMIN = { email: 'f10-admin@fkui.or.id', password: 'f10-admin-pass' };
 let adminToken = '';
 let studentToken = '';
-let studentId = '';
+
 let periodId = '';
 const FP = 'fp-f10-test';
 
@@ -108,9 +108,9 @@ beforeAll(async () => {
   const pBody = (await pRes.json()) as { id: string };
   periodId = pBody.id;
 
-  const { token, studentId: sid } = await createStudentAndLogin('f10npm001', periodId);
+  const { token } = await createStudentAndLogin('f10npm001', periodId);
   studentToken = token;
-  studentId = sid;
+  
 }, 120_000);
 
 afterAll(async () => {
@@ -171,7 +171,7 @@ describe('POST /api/support/chat', () => {
 
   it('enforces 20/min rate limit', async () => {
     // Flood with 21 requests; at least the 21st should 429
-    const key = `support:chat:${studentToken.split('.')[2]?.slice(0, 10) ?? 'unknown'}`;
+    
     // Instead of bruteforcing the HTTP endpoint, manipulate Redis directly
     const { JwtService } = await import('@nestjs/jwt');
     const jwt = new JwtService({ secret: process.env.JWT_SECRET ?? 'integration-test-secret' });

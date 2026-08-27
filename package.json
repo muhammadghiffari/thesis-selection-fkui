@@ -41,6 +41,7 @@
     "csv-parse": "^5.6.0",
     "drizzle-orm": "^0.44.7",
     "exceljs": "^4.4.0",
+    "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "nestjs-pino": "^4.6.1",
     "pg": "^8.23.0",
