@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 
 interface SwapRow {
@@ -13,14 +14,31 @@ interface SwapRow {
   title?: string;
 }
 
+interface Catalog {
+  mySelections: Array<{
+    id: string;
+    thesisId: string;
+    priority: number;
+    status: string;
+    title: string;
+  }>;
+}
+
 /** Student view: own requests with live status + cancel while pending. */
 export function MySwapsPage() {
+  const [params] = useSearchParams();
+  const periodId = params.get('period');
   const [rows, setRows] = useState<SwapRow[]>([]);
+  const [selections, setSelections] = useState<Catalog['mySelections']>([]);
   const [banner, setBanner] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setRows(await api<SwapRow[]>('/swaps/mine'));
-  }, []);
+    if (periodId) {
+      const cat = await api<Catalog>(`/war/catalog?periodId=${periodId}`);
+      setSelections(cat.mySelections.filter(m => m.status === 'confirmed' || m.status === 'taken'));
+    }
+  }, [periodId]);
   useEffect(() => void load(), [load]);
 
   async function cancel(id: string): Promise<void> {
@@ -34,7 +52,7 @@ export function MySwapsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-4 sm:p-6">
       <h1 className="text-lg font-semibold">My swap requests</h1>
       {banner && <p className="rounded-lg bg-red-100 px-3 py-2 text-sm">{banner}</p>}
       {rows.map((r) => (
@@ -64,8 +82,48 @@ export function MySwapsPage() {
           )}
         </div>
       ))}
-      {rows.length === 0 && <p className="text-sm text-slate-400">No swap requests yet.</p>}
-    </div>
+      {rows.length === 0 && <p className="text-sm text-slate-400">No active swap requests.</p>}
+      
+      <section className="mt-4 rounded-xl border bg-slate-50 p-4 shadow-sm">
+        <h2 className="mb-2 font-medium">Request a new swap</h2>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const fd = new FormData(form);
+          try {
+            await api('/swaps', { method: 'POST', body: {
+              selectionId: fd.get('selectionId'),
+              category: fd.get('category'),
+              reasonDetail: fd.get('reasonDetail'),
+            }});
+            form.reset();
+            await load();
+          } catch (err) {
+            setBanner(err instanceof Error ? err.message : String(err));
+          }
+        }} className="flex flex-col gap-3 text-sm">
+          <select name="selectionId" required className="rounded border px-3 py-2 bg-white">
+            <option value="">Select a confirmed thesis to swap...</option>
+            {selections.map(s => <option key={s.id} value={s.id}>#{s.priority} - {s.title}</option>)}
+          </select>
+          <select name="category" required className="rounded border px-3 py-2 bg-white">
+            <option value="">Select category...</option>
+            <option value="schedule_conflict">Schedule Conflict</option>
+            <option value="health_issue">Health Issue</option>
+            <option value="research_mismatch">Research Mismatch</option>
+            <option value="other">Other</option>
+          </select>
+          <textarea name="reasonDetail" placeholder="Reason details (min 20 chars)..." required minLength={20} className="rounded border px-3 py-2" rows={3}></textarea>
+          <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-white">Submit Request</button>
+        </form>
+      </section>
+      
+      {periodId && (
+        <div className="mt-2 text-center text-sm">
+          <Link to={`/receipt?period=${periodId}`} className="underline text-slate-500">Back to Receipt</Link>
+        </div>
+      )}
+    </main>
   );
 }
 

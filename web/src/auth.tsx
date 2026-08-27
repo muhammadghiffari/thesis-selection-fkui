@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { api, clearTokens, hasToken } from './lib/api';
+import { api, clearTokens, hasToken, setTokens } from './lib/api';
 
 interface Profile {
   id: string;
@@ -54,8 +54,7 @@ export function LoginPage() {
       });
       if (!res.ok) throw new Error('Invalid credentials');
       const body = (await res.json()) as { accessToken: string; refreshToken: string; user?: { role?: string } };
-      localStorage.setItem('access_token', body.accessToken);
-      localStorage.setItem('refresh_token', body.refreshToken);
+      setTokens(body.accessToken, body.refreshToken);
       navigate(body.user?.role === 'lecturer' ? '/lecturer' : '/students');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'login failed');

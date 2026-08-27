@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { onBanner, connectRealtime } from './lib/realtime';
 import { RequireAdmin, RequireRole, LogoutButton, LoginPage } from './auth';
 import { StudentsPage } from './pages/StudentsPage';
@@ -33,7 +33,7 @@ function ShellLecturer() {
     <div className="min-h-screen bg-slate-50">
       <nav className="sticky top-0 z-10 flex items-center gap-1 border-b bg-white px-4 py-2">
         <span className="mr-2 text-sm font-semibold">FKUI Supervisor</span>
-        <a href="#/lecturer" className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white">Dashboard</a>
+        <Link to="/lecturer" className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white">Dashboard</Link>
         <span className="ml-auto"><LogoutButton /></span>
       </nav>
       <main className="mx-auto max-w-5xl p-4 sm:p-6">
@@ -63,13 +63,13 @@ function Shell() {
       <nav className="sticky top-0 z-10 flex items-center gap-1 border-b bg-white px-4 py-2">
         <span className="mr-2 text-sm font-semibold">FKUI Admin</span>
         {tabs.map((t) => (
-          <a
+          <Link
             key={t.to}
-            href={`#${t.to}`}
+            to={t.to}
             className={`rounded-lg px-3 py-1.5 text-sm ${location.pathname === t.to ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
           >
             {t.label}
-          </a>
+          </Link>
         ))}
         <span className="ml-auto"><LogoutButton /></span>
       </nav>
@@ -81,7 +81,6 @@ function Shell() {
           <Route path="/periods" element={<PeriodsPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="/swaps-review" element={<SwapReviewPage />} />
-          <Route path="/my-swaps" element={<MySwapsPage />} />
           <Route path="/monitor" element={<AdminMonitorPage />} />
           <Route path="/integrity" element={<IntegrityQueuePage scope="admin" />} />
           <Route path="/audit" element={<AuditViewerPage />} />
@@ -102,6 +101,7 @@ export default function App() {
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/war" element={<WarRoomPage />} />
         <Route path="/receipt" element={<ReceiptPage />} />
+        <Route path="/my-swaps" element={<MySwapsPage />} />
         {/* lecturer area (server-scoped endpoints) */}
         <Route element={RequireRole(['lecturer', 'admin'])()}>
           <Route path="/lecturer" element={<ShellLecturer />} />

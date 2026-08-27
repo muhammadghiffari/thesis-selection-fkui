@@ -318,7 +318,10 @@ export function ReceiptPage() {
         Undo is available for a short window after each claim. Afterwards, changes go through a
         swap request to your lecturer.
       </p>
-      <Link to={`/lobby?period=${periodId}`} className="text-center text-sm underline">Back to lobby</Link>
+      <div className="flex justify-center gap-4 text-sm">
+        <Link to={`/lobby?period=${periodId}`} className="underline">Back to lobby</Link>
+        <Link to={`/my-swaps?period=${periodId}`} className="underline text-amber-700">Request / View Swaps</Link>
+      </div>
     </main>
   );
 }

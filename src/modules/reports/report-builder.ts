@@ -151,7 +151,7 @@ export class ReportBuilder {
     }
     let executablePath: string | undefined;
     try {
-      executablePath = puppeteer.executablePath();
+      executablePath = await puppeteer.executablePath();
     } catch {
       throw new Error('pdf-browser-unavailable');
     }
@@ -175,7 +175,7 @@ export class ReportBuilder {
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'load' });
       const buffer = await page.pdf({ format: 'A4', printBackground: false });
       return { buffer: Buffer.from(buffer), filename: 'final-selections.pdf' };
     } finally {

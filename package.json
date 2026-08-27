@@ -12,8 +12,8 @@
   "scripts": {
     "dev": "concurrently -n tsc,api,worker,web -c cyan,blue,yellow,green \"npm:watch:server\" \"npm:start:api\" \"npm:start:worker\" \"npm:dev:web\"",
     "watch:server": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "start:api": "node --watch dist/src/main.js",
-    "start:worker": "node --watch dist/workers/src/main.js",
+    "start:api": "node --env-file=.env --watch dist/src/main.js",
+    "start:worker": "node --env-file=.env --watch dist/workers/src/main.js",
     "dev:web": "npm run dev --workspace web",
     "build": "tsc -p tsconfig.build.json && npm run build --workspace web",
     "build:server": "tsc -p tsconfig.build.json",
