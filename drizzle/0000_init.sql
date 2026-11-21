@@ -36,9 +36,8 @@ CREATE TABLE IF NOT EXISTS "students" (
 
 -- DB-level enforcement of the student email domain.
 -- ponytail: regex hardcodes @ui.ac.id (canonical SCHEMA.sql behaviour);
--- runtime STUDENT_DOMAINS overrides live in the service layer
--- (src/modules/identity/student-email.service.ts). If multi-domain ever
--- becomes a hard DB requirement, move the allowlist into an app_settings table.
+-- if multi-domain ever becomes a hard DB requirement, move the allowlist
+-- into an app_settings table.
 CREATE OR REPLACE FUNCTION check_student_email_domain() RETURNS trigger AS $$
 BEGIN
   IF NEW.email !~ '@ui\.ac\.id$' THEN

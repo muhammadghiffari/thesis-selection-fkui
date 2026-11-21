@@ -8,8 +8,8 @@ import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { LoginRateLimiter } from './login-rate-limiter.js';
+import { PasswordResetService } from './password-reset.service.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
-import { StudentEmailService } from './student-email.service.js';
 import { UsersService } from './users.service.js';
 
 @Module({
@@ -27,9 +27,9 @@ import { UsersService } from './users.service.js';
   providers: [
     UsersService,
     AuthService,
-    StudentEmailService,
     RefreshTokensService,
     LoginRateLimiter,
+    PasswordResetService,
     {
       // port adapter — consumers depend on the shared interface, not this class
       provide: SESSION_ISSUER,
@@ -41,6 +41,6 @@ import { UsersService } from './users.service.js';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [UsersService, StudentEmailService, RefreshTokensService, SESSION_ISSUER],
+  exports: [UsersService, RefreshTokensService, SESSION_ISSUER],
 })
 export class IdentityModule {}

@@ -5,7 +5,6 @@ import type { AuthUser, UserProfile } from './auth-user.js';
 import type { Role } from './decorators/roles.decorator.js';
 import { LoginRateLimiter } from './login-rate-limiter.js';
 import { RefreshTokensService } from './refresh-tokens.service.js';
-import { StudentEmailService } from './student-email.service.js';
 import { UsersService } from './users.service.js';
 
 /** argon2id hash of a random string; verifies against unknown emails to equalize timing. */
@@ -32,7 +31,6 @@ export class AuthService {
   constructor(
     @Inject(UsersService) private readonly users: UsersService,
     @Inject(JwtService) private readonly jwt: JwtService,
-    @Inject(StudentEmailService) private readonly studentEmails: StudentEmailService,
     @Inject(RefreshTokensService) private readonly refreshTokens: RefreshTokensService,
     @Inject(LoginRateLimiter) private readonly rateLimiter: LoginRateLimiter,
   ) {}
@@ -52,13 +50,6 @@ export class AuthService {
 
     await this.rateLimiter.reset(email, ip);
     return this.issueSession(user.id, user.role as Role);
-  }
-
-  /** Public self-registration — students only, @ui.ac.id (STUDENT_DOMAINS) enforced. */
-  async registerStudent(email: string, password: string): Promise<TokenPair> {
-    this.studentEmails.assertValidStudentEmail(email);
-    const user = await this.createUserGuarded({ email, password, role: 'student' });
-    return this.issueSession(user.id, user.role);
   }
 
   /** Admin-provisioned staff accounts (lecturers/admins). */
