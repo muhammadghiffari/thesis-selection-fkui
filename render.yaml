@@ -1,0 +1,58 @@
+# Render Blueprint — free public demo (user-owned infra)
+# - App: this single free web service runs NestJS API + built SPA + BullMQ workers
+#   in ONE process (Render free has no separate worker service).
+# - DB: external Neon free Postgres (user creates it, pastes DATABASE_URL).
+# - Queue/cache: external Upstash free Redis (user creates it, pastes REDIS_URL).
+# No secrets are committed here; every secret is sync:false (set in dashboard).
+services:
+  - type: web
+    name: thesis-selection-fkui
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    branch: main
+    healthCheckPath: /api/health
+    envVars:
+      # ---- user-provided secrets (paste values in Render dashboard) ----
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SOCKET_ORIGINS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ALERT_WEBHOOK_URL
+        sync: false
+      - key: ALERT_EMAIL
+        sync: false
+      - key: SUPPORT_WHATSAPP_NUMBER
+        sync: false
+      # ---- non-secret settings ----
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "true"
+      - key: MAIL_PROVIDER
+        value: resend
+      - key: STUDENT_DOMAINS
+        value: ui.ac.id
+      - key: MAGIC_LINK_TTL_SEC
+        value: "900"
+      - key: MAGIC_LINK_MAX_AGE_DAYS
+        value: "30"
+      - key: EXPORT_DIR
+        value: /app/data/exports
+      # Render injects PORT automatically; main.ts binds to it (falls back to 3000).
+      # Render Dockerfile CMD runs: migrate-cli.js && exec node dist/src/main.js

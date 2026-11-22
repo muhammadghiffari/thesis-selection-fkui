@@ -16,6 +16,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -26,6 +27,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+    restart: unless-stopped
 
   api:
     build: .
@@ -37,17 +39,37 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/thesis_selection
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      # Override in production — JWT_SECRET MUST be >=32 chars (server refuses weak secrets).
+      JWT_SECRET: ${JWT_SECRET:-compose-secret-change-me-to-random-32-chars}
       STUDENT_DOMAINS: ${STUDENT_DOMAINS:-ui.ac.id}
       NODE_ENV: production
+      # TODO: set APP_URL to the public origin (e.g. https://thesis.fkui.ac.id).
+      APP_URL: ${APP_URL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      SUPPORT_WHATSAPP_NUMBER: ${SUPPORT_WHATSAPP_NUMBER:-}
     ports:
       - '3000:3000'
+    volumes:
+      - apidata:/app/data
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   worker:
     build: .
@@ -60,7 +82,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/thesis_selection
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      JWT_SECRET: ${JWT_SECRET:-compose-secret-change-me-to-random-32-chars}
       NODE_ENV: production
     healthcheck:
       test: ['CMD', 'pgrep', '-f', 'dist/workers']
@@ -68,6 +90,13 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 volumes:
   pgdata:
+  apidata:

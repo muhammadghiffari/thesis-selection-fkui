@@ -256,6 +256,7 @@ describe('banding behavior via service runner (worker-equivalent)', () => {
       { emit: () => undefined, on: () => () => undefined } as never,
       { log: () => undefined } as never,
       redis,
+      { async alert() { return undefined; } } as never,
     );
   });
 

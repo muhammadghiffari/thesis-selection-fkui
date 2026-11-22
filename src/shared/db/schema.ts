@@ -241,6 +241,18 @@ export const refreshTokens = pgTable('refresh_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Single-use, 30-min password-reset tokens (staff only). Only sha256 hash persists. */
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const notificationDeliveries = pgTable('notification_deliveries', {
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id),

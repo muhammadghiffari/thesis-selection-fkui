@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import type Redis from 'ioredis';
 import { REDIS } from '../../shared/redis/redis.module.js';
+import { AlertsService } from '../../shared/alerts/alerts.service.js';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
 import { EventBus } from '../../shared/event-bus/event-bus.service.js';
@@ -28,6 +29,7 @@ export class IntegrityService {
     @Inject(EventBus) private readonly events: EventBus,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(REDIS) private readonly redis: Redis,
+    @Inject(AlertsService) private readonly alerts: AlertsService,
   ) {
     this.scorer = new IntegrityScorer(db);
     // confirm → async scoring job (BullMQ; idempotent per selection)
@@ -51,6 +53,12 @@ export class IntegrityService {
     const result = await this.scorer.scoreSelection(selectionId);
     if (result.level === 'high' && !result.skipped) {
       await this.notifyHighOnce(selectionId, result.score, result.signals);
+      void Promise.resolve(
+        this.alerts?.alert('integrity-high', `Selection ${selectionId} scored HIGH (${result.score})`, {
+          selectionId,
+          score: result.score,
+        }),
+      ).catch(() => undefined);
     }
     if (result.level !== 'clean') {
       this.events.emit('integrity.flagged', { selectionId, level: result.level, score: result.score });

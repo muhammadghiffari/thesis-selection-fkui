@@ -1,4 +1,4 @@
-import { bootWorkers, type Processors } from './index.js';
+import { bootWorkersInProcess, type WorkerFactory } from '../../src/shared/runtime/worker-lifecycle.js';
 import { createEmailProcessor } from './processors/email.js';
 import { createExpiryEventsProcessor } from './processors/expiry-events.js';
 import { createExportProcessor } from './processors/export.js';
@@ -9,19 +9,19 @@ async function main(): Promise<void> {
     console.error('REDIS_URL is required');
     process.exit(1);
   }
-  const processors: Processors = {
-    email: createEmailProcessor().processor,
-    expiry_events: createExpiryEventsProcessor(),
-    export: createExportProcessor(),
-  };
-  const running = await bootWorkers(redisUrl, processors);
-  console.log(`workers online (${running.workers.length} registered)`);
+  const factories: WorkerFactory[] = [
+    { name: 'email', ...createEmailProcessor() },
+    { name: 'expiry_events', ...createExpiryEventsProcessor() },
+    { name: 'export', ...createExportProcessor() },
+  ];
+  const runtime = await bootWorkersInProcess(redisUrl, factories);
+  console.log(`workers online (${runtime.workers.length} registered)`);
 
   let stopping = false;
   const stop = (): void => {
     if (stopping) return;
     stopping = true;
-    void running.shutdown().then(
+    void runtime.shutdown().then(
       () => process.exit(0),
       () => process.exit(1),
     );

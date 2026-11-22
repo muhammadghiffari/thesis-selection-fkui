@@ -1,16 +1,16 @@
 import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsInt, IsISO8601, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsISO8601, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import type { Request } from 'express';
 import { Roles } from '../../modules/identity/decorators/roles.decorator.js';
 import { AuditService } from './audit.service.js';
 
 export class AuditQueryDto {
-  @IsOptional() @IsString() actorId?: string;
-  @IsOptional() @IsString() action?: string;
-  @IsOptional() @IsString() entityType?: string;
+  @IsOptional() @IsUUID() actorId?: string;
+  @IsOptional() @IsString() @MaxLength(200) action?: string;
+  @IsOptional() @IsString() @MaxLength(100) entityType?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) pageSize?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
   /** ISO date (UTC) lower bound on created_at */
   @IsOptional() @IsISO8601() from?: string;
 }

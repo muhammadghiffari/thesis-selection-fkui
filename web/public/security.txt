@@ -1,0 +1,5 @@
+Contact: mailto:security@fkui.ac.id
+Expires: 2026-12-31T23:59:59Z
+Preferred-Languages: en
+Canonical: https://thesis-selection.fkui.ac.id/.well-known/security.txt
+Policy: https://thesis-selection.fkui.ac.id/rules

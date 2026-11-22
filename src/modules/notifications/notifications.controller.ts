@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Inject, Param, Post, Req } from '@nestjs/common';
-import { IsIn, IsString, IsUUID, MinLength } from 'class-validator';
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { IsIn, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 import type { Request } from 'express';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { ConflictException, GoneException, UnauthorizedException } from '@nestjs/common';
@@ -13,9 +13,9 @@ import { REDIS } from '../../shared/redis/redis.module.js';
 import type Redis from 'ioredis';
 
 export class MagicTokenDto {
-  @IsString() @MinLength(20) token!: string;
+  @IsString() @MinLength(20) @MaxLength(512) token!: string;
   /** Stable device fingerprint generated client-side. */
-  @IsString() @MinLength(8) fingerprint!: string;
+  @IsString() @MinLength(8) @MaxLength(256) fingerprint!: string;
 }
 
 export class RunStageDto {
@@ -95,7 +95,7 @@ export class DeliveriesController {
   ) {}
 
   @Get('periods/:id/enrollments')
-  dashboard(@Param('id') periodId: string) {
+  dashboard(@Param('id', ParseUUIDPipe) periodId: string) {
     return this.notifications.dashboard(periodId);
   }
 
@@ -103,7 +103,7 @@ export class DeliveriesController {
   @Post('periods/:id/run-stage')
   async runStage(
     @Req() req: Request,
-    @Param('id') periodId: string,
+    @Param('id', ParseUUIDPipe) periodId: string,
     @Body() dto: RunStageDto,
   ): Promise<{ sent: number }> {
     const user = requireUser(req);
@@ -119,7 +119,7 @@ export class DeliveriesController {
   @Post('students/:studentId/resend-link')
   async resend(
     @Req() req: Request,
-    @Param('studentId') studentId: string,
+    @Param('studentId', ParseUUIDPipe) studentId: string,
     @Body() dto: ResendDto,
   ): Promise<{ delivered: true }> {
     const user = requireUser(req);

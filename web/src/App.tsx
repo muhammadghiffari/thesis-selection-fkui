@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { onBanner, connectRealtime } from './lib/realtime';
-import { RequireAdmin, RequireRole, LogoutButton, LoginPage } from './auth';
+import { RequireAdmin, RequireRole, LogoutButton, LoginPage, ForgotPasswordPage, ResetPasswordPage } from './auth';
 import { StudentsPage } from './pages/StudentsPage';
 import { PeriodsPage } from './pages/PeriodsPage';
 import { ThesesPage } from './pages/ThesesPage';
@@ -12,6 +12,7 @@ import { ReceiptPage, WarRoomPage } from './pages/WarPages';
 import { MySwapsPage, SwapReviewPage } from './pages/SwapPages';
 import { LecturerDashboardPage } from './pages/LecturerPages';
 import { AdminMonitorPage, AuditViewerPage, IntegrityQueuePage } from './pages/SupervisorPages';
+import { ErrorBoundary, NotFoundPage } from './pages/ErrorPages';
 
 function BannerToast() {
   const [banner, setBanner] = useState<{ message: string; at: string } | null>(null);
@@ -39,12 +40,14 @@ function ShellLecturer() {
       <main className="mx-auto max-w-5xl p-4 sm:p-6">
         <Routes>
           <Route path="/lecturer" element={<LecturerDashboardPage />} />
-          <Route path="*" element={<Navigate to="/lecturer" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>
   );
 }
+
+const RequireLecturer = RequireRole(['lecturer', 'admin']);
 
 function Shell() {
   const location = useLocation();
@@ -84,7 +87,7 @@ function Shell() {
           <Route path="/monitor" element={<AdminMonitorPage />} />
           <Route path="/integrity" element={<IntegrityQueuePage scope="admin" />} />
           <Route path="/audit" element={<AuditViewerPage />} />
-          <Route path="*" element={<Navigate to="/students" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>
@@ -93,26 +96,41 @@ function Shell() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* student-facing (magic session, not admin) */}
-        <Route path="/magic/:token" element={<MagicEntryPage />} />
-        <Route path="/lobby" element={<LobbyPage />} />
-        <Route path="/rules" element={<RulesPage />} />
-        <Route path="/war" element={<WarRoomPage />} />
-        <Route path="/receipt" element={<ReceiptPage />} />
-        <Route path="/my-swaps" element={<MySwapsPage />} />
-        {/* lecturer area (server-scoped endpoints) */}
-        <Route element={RequireRole(['lecturer', 'admin'])()}>
-          <Route path="/lecturer" element={<ShellLecturer />} />
-        </Route>
-        {/* admin shell */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<RequireAdmin />}>
-          <Route path="/*" element={<Shell />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {/* public auth */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          {/* student-facing (magic session, not admin) */}
+          <Route path="/magic/:token" element={<MagicEntryPage />} />
+          <Route path="/lobby" element={<LobbyPage />} />
+          <Route path="/rules" element={<RulesPage />} />
+          <Route path="/war" element={<WarRoomPage />} />
+          <Route path="/receipt" element={<ReceiptPage />} />
+          <Route path="/my-swaps" element={<MySwapsPage />} />
+          {/* lecturer area (server-scoped endpoints) */}
+          <Route element={<RequireLecturer />}>
+            <Route path="/lecturer" element={<ShellLecturer />} />
+          </Route>
+          {/* admin shell */}
+          <Route element={<RequireAdmin />}>
+            <Route path="/students" element={<Shell />} />
+            <Route path="/theses" element={<Shell />} />
+            <Route path="/periods" element={<Shell />} />
+            <Route path="/deliveries" element={<Shell />} />
+            <Route path="/swaps-review" element={<Shell />} />
+            <Route path="/monitor" element={<Shell />} />
+            <Route path="/integrity" element={<Shell />} />
+            <Route path="/audit" element={<Shell />} />
+          </Route>
+          {/* root → let auth decide the landing page */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* unknown URL: clean 404 (SPA fallback) */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
-

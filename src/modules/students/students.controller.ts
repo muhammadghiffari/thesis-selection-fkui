@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import type { Request, Response } from 'express';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { assertUploadable, parseSpreadsheet } from '../../shared/parsing/spreadsheet.js';
@@ -23,7 +23,7 @@ import { countValid, type IncomingStudent, type ValidatedStudentRow } from './st
 import { StudentsService } from './students.service.js';
 
 export class ListQueryDto {
-  @IsOptional() @IsString() search?: string;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @IsIn(['regular', 'kki']) classType?: 'regular' | 'kki' | '';
   @IsOptional() @IsIn(['clinical', 'basic', 'community']) track?: 'clinical' | 'basic' | 'community' | '';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
@@ -31,17 +31,17 @@ export class ListQueryDto {
 }
 
 export class CommitImportDto {
-  @ArrayMinSize(1) @IsArray() rows!: IncomingStudent[];
+  @ArrayMinSize(1) @ArrayMaxSize(5000) @IsArray() rows!: IncomingStudent[];
 }
 
 export class BulkActionDto {
-  @ArrayMinSize(1) @IsArray() @IsString({ each: true }) studentIds!: string[];
+  @ArrayMinSize(1) @ArrayMaxSize(1000) @IsArray() @IsUUID('4', { each: true }) studentIds!: string[];
   @IsIn(['assign_slots', 'send_magic_links', 'reset_attempts', 'deactivate'])
   action!: 'assign_slots' | 'send_magic_links' | 'reset_attempts' | 'deactivate';
   /** Required for enrollment-scoped actions (assign_slots / reset_attempts / magic links). */
-  @IsOptional() @IsString() periodId?: string;
+  @IsOptional() @IsUUID() periodId?: string;
   /** Attempts value for assign_slots / reset_attempts. Defaults to period default (4). */
-  @IsOptional() @Type(() => Number) @IsInt() @Min(0) attempts?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) attempts?: number;
 }
 
 function requireUser(req: Request): AuthUser {

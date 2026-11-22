@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 import type { Request } from 'express';
 import { Roles } from '../identity/decorators/roles.decorator.js';
 import { IntegrityService } from './integrity.service.js';
@@ -9,13 +9,13 @@ export class QueueQueryDto {
   @IsOptional() @IsIn(['high', 'medium']) level?: 'high' | 'medium';
   @IsOptional() @IsUUID() periodId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) pageSize?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
 }
 
 export class ResolveDto {
   /** false_positive clears the flag; investigate queues follow-up; revoked releases the title. */
   @IsIn(['false_positive', 'investigate', 'revoked']) outcome!: string;
-  @IsString() @MinLength(3) note!: string;
+  @IsString() @MinLength(3) @MaxLength(2000) note!: string;
 }
 
 function requireUser(req: Request): { sub: string; role: 'admin' | 'lecturer' | 'student' } {

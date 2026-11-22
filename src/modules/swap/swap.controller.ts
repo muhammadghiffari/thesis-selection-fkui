@@ -11,18 +11,18 @@ export class CreateSwapDto {
   @IsUUID() selectionId!: string;
   @IsIn(['wrong_pick', 'interest_mismatch', 'lecturer_schedule_issue', 'other']) category!: string;
   @IsString() @MinLength(20) @MaxLength(2000) detail!: string;
-  @IsString() @MinLength(8) idempotencyKey!: string;
+  @IsUUID() idempotencyKey!: string;
 }
 
 export class DecideDto {
   @IsIn(['approve', 'reject']) decision!: 'approve' | 'reject';
   /** Mandatory — requests without a written note are rejected with 400. */
-  @IsString() @MinLength(3) note!: string;
+  @IsString() @MinLength(3) @MaxLength(2000) note!: string;
 }
 
 export class RevokeDto {
   @IsUUID() selectionId!: string;
-  @IsString() @MinLength(3) reason!: string;
+  @IsString() @MinLength(3) @MaxLength(2000) reason!: string;
 }
 
 export class WatchDto {

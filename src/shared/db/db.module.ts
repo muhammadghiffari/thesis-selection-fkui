@@ -8,9 +8,17 @@ import * as schema from './schema.js';
 export type Database = NodePgDatabase<typeof schema>;
 export const DATABASE = Symbol('DATABASE');
 
+/** Bounded pool size: DB_POOL_MAX (integer 1..50, default 20). Neon free's
+ * pooler tolerates ~4 pools (API + 3 workers) at this cap. */
+export function dbPoolMax(): number {
+  const raw = Number(process.env.DB_POOL_MAX ?? 20);
+  if (!Number.isInteger(raw) || raw < 1) return 20;
+  return Math.min(raw, 50);
+}
+
 /** Standalone pool+db for CLIs/tests that own their lifecycle. */
 export function createStandaloneDb(connectionString: string): { db: Database; end: () => Promise<void> } {
-  const pool = new Pool({ connectionString, max: 20 });
+  const pool = new Pool({ connectionString, max: dbPoolMax() });
   return { db: drizzle(pool, { schema }), end: () => pool.end() };
 }
 
@@ -28,7 +36,7 @@ let _poolRef: Pool | null = null;
       provide: DATABASE,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        _poolRef = new Pool({ connectionString: config.getOrThrow<string>('app.databaseUrl'), max: 20 });
+        _poolRef = new Pool({ connectionString: config.getOrThrow<string>('app.databaseUrl'), max: dbPoolMax() });
         return drizzle(_poolRef, { schema });
       },
     },

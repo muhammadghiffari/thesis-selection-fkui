@@ -10,6 +10,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/db.module.js';
 import { REDIS } from '../redis/redis.module.js';
 import { Public } from '../../modules/identity/decorators/public.decorator.js';
+import { SkipThrottle } from '../throttle/throttle.decorator.js';
 
 function up(key: string): HealthIndicatorResult {
   return { [key]: { status: 'up' } };
@@ -31,6 +32,7 @@ export class HealthController {
   ) {}
 
   @Public()
+  @SkipThrottle()
   @Get()
   @HealthCheck()
   check(): Promise<{ status: string }> {

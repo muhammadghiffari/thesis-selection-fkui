@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Inject,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -13,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 import type { Request, Response } from 'express';
 import { AuditService } from '../../shared/audit/audit.service.js';
 import { assertUploadable, parseSpreadsheet } from '../../shared/parsing/spreadsheet.js';
@@ -24,7 +25,7 @@ import { ThesesService } from './theses.service.js';
 
 export class ThesisListQueryDto {
   @IsUUID() periodId!: string;
-  @IsOptional() @IsString() search?: string;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) pageSize?: number;
 }
@@ -32,7 +33,7 @@ export class ThesisListQueryDto {
 export class ThesisCommitDto {
   @IsUUID() periodId!: string;
   /** Rows may carry lecturer_full_name; server resolves/creates lecturers. */
-  @ArrayMinSize(1) @IsArray() rows!: Array<{
+  @ArrayMinSize(1) @ArrayMaxSize(5000) @IsArray() rows!: Array<{
     title: string;
     track: string;
     description?: string;
@@ -65,7 +66,7 @@ export class ThesesController {
   }
 
   @Get('export.xlsx')
-  async exportXlsx(@Query('periodId') periodId: string, @Res() res: Response): Promise<void> {
+  async exportXlsx(@Query('periodId', ParseUUIDPipe) periodId: string, @Res() res: Response): Promise<void> {
     const buffer = await this.theses.exportXlsx(periodId);
     res.setHeader(
       'content-type',
@@ -78,7 +79,7 @@ export class ThesesController {
   @Post('import/preview')
   @UseInterceptors(FileInterceptor('file'))
   async preview(
-    @Query('periodId') _periodId: string,
+    @Query('periodId', ParseUUIDPipe) _periodId: string,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<{ rows: ValidatedThesisRow[]; total: number; valid: number }> {
     if (!file) throw new BadRequestException('file field is required');

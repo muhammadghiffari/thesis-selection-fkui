@@ -1,0 +1,44 @@
+User-Agent: *
+Allow: /
+Disallow: /api/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /magic/
+Disallow: /war
+Disallow: /lobby
+Disallow: /receipt
+Disallow: /my-swaps
+Disallow: /admin
+Disallow: /lecturer
+Disallow: /students
+Disallow: /theses
+Disallow: /periods
+Disallow: /deliveries
+Disallow: /monitor
+Disallow: /integrity
+Disallow: /audit
+
+# AI crawlers: deny all (terms of service AI-training opt-out)
+User-Agent: GPTBot
+Disallow: /
+
+User-Agent: ClaudeBot
+Disallow: /
+
+User-Agent: CCBot
+Disallow: /
+
+User-Agent: Google-Extended
+Disallow: /
+
+User-Agent: meta-externalagent
+Disallow: /
+
+User-Agent: cohere-ai
+Disallow: /
+
+User-Agent: Bytespider
+Disallow: /
+
+Sitemap: /sitemap.xml

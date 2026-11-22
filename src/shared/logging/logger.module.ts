@@ -8,9 +8,25 @@ export function buildPinoParams(app: AppConfig): Params {
     pinoHttp: {
       level: app.isProd ? 'info' : 'debug',
       transport: app.isProd ? undefined : { target: 'pino-pretty', options: { singleLine: true } },
-      redact: { paths: ['req.headers.authorization', 'req.headers.cookie'], censor: '[REDACTED]' },
-      genReqId: () => randomUUID(),
-      customProps: () => ({ context: 'http' }),
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers["x-request-id"]',
+          'req.body.password',
+          'req.body.refreshToken',
+          'req.body.token',
+          'req.body.fingerprint',
+          'req.body.email',
+          'res.headers["set-cookie"]',
+        ],
+        censor: '[REDACTED]',
+      },
+      genReqId: (req) =>
+        (typeof req.headers['x-request-id'] === 'string' && req.headers['x-request-id'])
+          ? (req.headers['x-request-id'] as string)
+          : randomUUID(),
+      customProps: (req) => ({ context: 'http', requestId: req.id }),
     },
   };
 }

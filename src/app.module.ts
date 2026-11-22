@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { appConfig } from './shared/config/configuration.js';
 import { AppConfigModule } from './shared/config/app-config.module.js';
 import { AuditModule } from './shared/audit/audit.module.js';
@@ -24,6 +24,9 @@ import { StudentsModule } from './modules/students/students.module.js';
 import { ThesesModule } from './modules/theses/theses.module.js';
 import { PeriodsModule } from './modules/periods/periods.module.js';
 import { SupportModule } from './modules/support/support.module.js';
+import { AlertsModule } from './shared/alerts/alerts.module.js';
+import { SanitizeInterceptor } from './shared/validation/sanitize.js';
+import { ThrottlerGuard } from './shared/throttle/throttler.guard.js';
 
 @Module({
   imports: [
@@ -49,8 +52,13 @@ import { SupportModule } from './modules/support/support.module.js';
     IntegrityModule,
     ReportsModule,
     SupportModule,
+    AlertsModule,
   ],
-  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: SanitizeInterceptor },
+  ],
 })
 export class AppModule {}
 

@@ -1,16 +1,17 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, ConflictException, GoneException } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import type { Request } from 'express';
 import type { AuthUser } from '../identity/auth-user.js';
 import { Roles } from '../identity/decorators/roles.decorator.js';
+import { Throttle } from '../../shared/throttle/throttle.decorator.js';
 import { WarService } from './war.service.js';
 
 export class ClaimDto {
   @IsUUID() periodId!: string;
   @IsUUID() thesisId!: string;
   /** Client-generated unique key — retries return the stored outcome. */
-  @IsString() @MinLength(8) idempotencyKey!: string;
+  @IsUUID() idempotencyKey!: string;
 }
 
 export class PeriodQueryDto {
@@ -19,7 +20,7 @@ export class PeriodQueryDto {
 
 export class ReorderDto {
   @IsUUID() periodId!: string;
-  @IsArray() @IsString({ each: true }) order!: string[];
+  @IsArray() @IsString({ each: true }) @MaxLength(64, { each: true }) order!: string[];
 }
 
 export class HeartbeatDto {
@@ -50,6 +51,7 @@ function requireUser(req: Request): AuthUser {
 export class WarController {
   constructor(@Inject(WarService) private readonly war: WarService) {}
 
+  @Throttle({ limit: 180, ttlSec: 60, keyBy: 'user' })
   @Get('catalog')
   catalog(@Req() req: Request, @Query() q: PeriodQueryDto) {
     const user = requireUser(req);
@@ -104,6 +106,7 @@ export class WarController {
   }
 
   /** Lobby-tab liveness for auto-war arming (Redis TTL key). */
+  @Throttle({ limit: 120, ttlSec: 60, keyBy: 'user' })
   @Post('heartbeat')
   heartbeat(@Req() req: Request, @Body() dto: HeartbeatDto) {
     const user = requireUser(req);

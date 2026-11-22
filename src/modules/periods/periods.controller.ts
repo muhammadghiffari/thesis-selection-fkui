@@ -18,6 +18,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   MinLength,
   IsIn,
@@ -30,8 +31,8 @@ import type { PeriodStatus } from './lifecycle.js';
 import { PeriodsService } from './periods.service.js';
 
 export class CreatePeriodDto {
-  @IsString() @MinLength(3) name!: string;
-  @IsString() @MinLength(4) academicYear!: string;
+  @IsString() @MinLength(3) @MaxLength(200) name!: string;
+  @IsString() @MinLength(4) @MaxLength(20) academicYear!: string;
   @IsOptional() @IsISO8601() opensAt?: string;
   @IsOptional() @IsISO8601() closesAt?: string;
 }
@@ -47,8 +48,8 @@ export class SettingsDto {
   @Type(() => Number) @IsInt() @Min(0) @Max(120) undo_window_sec?: number;
   @Type(() => Number) @IsInt() @Min(0) @Max(600) grace_period_sec?: number;
   @Type(() => Number) @IsInt() @Min(1) @Max(3) required_selections?: number;
-  @Type(() => Number) @IsInt() @Min(1) attempts_default?: number;
-  @Type(() => Number) @IsInt() @Min(1) watch_max?: number;
+  @Type(() => Number) @IsInt() @Min(1) @Max(100) attempts_default?: number;
+  @Type(() => Number) @IsInt() @Min(1) @Max(100) watch_max?: number;
   @IsIn(['first_come', 'lottery'])
   mode?: 'first_come' | 'lottery';
 }
