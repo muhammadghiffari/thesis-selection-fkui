@@ -118,7 +118,7 @@ Legend: **Verified** = source + local test evidence in this run · **N/A** = no 
 
 **Fixes applied after this audit (controller, same session):**
 - **NV-01 — FIXED.** `password-reset.service.ts` no longer rethrows on mail failure; it logs and always returns the generic `{ sent: true }`. Regression test: `test/unit/password-reset-enumeration.test.ts` (mocked failing provider → still `{ sent: true }`).
-- **NV-03 — FIXED.** `main.ts` now registers `runtime.onSiblingExit(() => stop())` (with an idempotence guard so SIGTERM + sibling-exit can't double-shutdown), so a dead worker fails the whole process for platform restart.
+- **NV-03 — PARTIALLY FIXED (wired + unit-tested; runtime effect unverified).** `main.ts` now registers `runtime.onSiblingExit(() => stop())` (with an idempotence guard so SIGTERM + sibling-exit can't double-shutdown), and `test/unit/worker-lifecycle.test.ts` asserts the callback fires on a mocked sibling exit. Caveat: BullMQ 5.81.3 `Worker`s do not natively emit an `exit` event, so the production sibling-death signal is currently inert — `onWorkerExit` is exercised by the mocked unit test but has no real event to subscribe to. Automatic worker-death → process-restart therefore depends on BullMQ emitting a real `exit` (or a future real signal, e.g. an error/failure hook or `close()` detection). The SIGTERM/SIGINT shutdown path remains the production-safe behavior; killing a worker on the live demo has **not** been observed.
 
 **Before public launch (owner/Task 8):**
 1. **NV-02** — verify Render XFF handling (forged `X-Forwarded-For`); consider user/email-keyed rate limits. Not fixable without a live deployment observation.

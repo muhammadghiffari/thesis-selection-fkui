@@ -5,3 +5,6 @@ coverage/
 *.local
 .DS_Store
 web/dist/
+data/
+*.csv
+test-import.ts

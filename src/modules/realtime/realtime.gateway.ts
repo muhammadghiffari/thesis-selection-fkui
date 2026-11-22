@@ -12,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { and, eq } from 'drizzle-orm';
 import { Server, Socket } from 'socket.io';
 import { DATABASE, type Database } from '../../shared/db/db.module.js';
-import { parseOrigins } from '../../shared/config/configuration.js';
+import { resolveSocketOrigins } from '../../shared/config/configuration.js';
 import { lecturers, periodEnrollments, students } from '../../shared/db/schema.js';
 import type { AuthUser } from '../identity/auth-user.js';
 import { RealtimeService } from './realtime.service.js';
@@ -21,11 +21,8 @@ interface HandshakeAuth {
   token?: string;
 }
 
-// Same allowlist as HTTP CORS (no wildcard). Falls back to dev origins.
-const SOCKET_ORIGINS =
-  parseOrigins(process.env.CORS_ORIGINS).length > 0
-    ? parseOrigins(process.env.CORS_ORIGINS)
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
+// Fail-closed allowlist: SOCKET_ORIGINS → CORS_ORIGINS → APP_URL → dev origins.
+const SOCKET_ORIGINS = resolveSocketOrigins();
 
 /**
  * Socket.IO gateway on the SAME http server. Handshake requires a valid

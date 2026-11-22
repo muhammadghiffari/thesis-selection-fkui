@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { sanitizeString, sanitizeValue } from '../../src/shared/validation/sanitize.js';
 import { botGuard } from '../../src/shared/security/bot-guard.js';
 import { ThrottlerGuard } from '../../src/shared/throttle/throttler.guard.js';
+import { resolveSocketOrigins } from '../../src/shared/config/configuration.js';
 import type { ExecutionContext } from '@nestjs/common';
 
 describe('sanitize', () => {
@@ -115,5 +116,41 @@ describe('ThrottlerGuard', () => {
     const ctxB = ctxFor(undefined, 'same-ip', 'user-b');
     await expect(guard.canActivate(ctxA)).resolves.toBe(true);
     await expect(guard.canActivate(ctxB)).resolves.toBe(true);
+  });
+});
+
+describe('socket origin resolution — fail-closed allowlist', () => {
+  it('prefers SOCKET_ORIGINS over CORS_ORIGINS and APP_URL', () => {
+    expect(
+      resolveSocketOrigins({
+        SOCKET_ORIGINS: 'https://socket.example.com',
+        CORS_ORIGINS: 'https://api.example.com',
+        APP_URL: 'https://app.example.com',
+      }),
+    ).toEqual(['https://socket.example.com']);
+  });
+
+  it('falls back to CORS_ORIGINS, then APP_URL, then localhost dev origins', () => {
+    expect(resolveSocketOrigins({ CORS_ORIGINS: 'https://a.example.com, https://b.example.com/', APP_URL: 'https://app.example.com' })).toEqual([
+      'https://a.example.com',
+      'https://b.example.com',
+    ]);
+    expect(resolveSocketOrigins({ APP_URL: 'https://app.example.com/' })).toEqual(['https://app.example.com']);
+    expect(resolveSocketOrigins({})).toEqual([
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]);
+  });
+
+  it('never returns a wildcard, even when configured', () => {
+    expect(resolveSocketOrigins({ SOCKET_ORIGINS: '*' })).not.toContain('*');
+    expect(resolveSocketOrigins({ SOCKET_ORIGINS: '*' })).toEqual([
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]);
+    expect(resolveSocketOrigins({ CORS_ORIGINS: '*' })).not.toContain('*');
+    expect(resolveSocketOrigins({ APP_URL: '*' })).not.toContain('*');
   });
 });

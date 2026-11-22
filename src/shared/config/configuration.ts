@@ -46,6 +46,22 @@ export function parseOrigins(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Socket.IO CORS allowlist. Explicit origins only — fail-closed, no wildcard.
+ * Resolution order: SOCKET_ORIGINS → CORS_ORIGINS → APP_URL → localhost dev.
+ * Accepts an env record so it can be unit-tested without mutating process.env.
+ */
+export function resolveSocketOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+  const explicit = (raw: string | undefined): string[] => parseOrigins(raw).filter((o) => o !== '*');
+  const socket = explicit(env.SOCKET_ORIGINS);
+  if (socket.length > 0) return socket;
+  const cors = explicit(env.CORS_ORIGINS);
+  if (cors.length > 0) return cors;
+  const appUrl = explicit(env.APP_URL)[0];
+  if (appUrl) return [appUrl];
+  return ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
+}
+
 export const appConfig = registerAs('app', (): AppConfig => {
   const nodeEnv = process.env.NODE_ENV ?? 'development';
   const isProd = nodeEnv === 'production';
